@@ -19,5 +19,9 @@ int main() {
         file.second->print();
     }
 
+    for (const auto& file : files) {
+        file.second->extract();
+    }
+
     return 0;
 }

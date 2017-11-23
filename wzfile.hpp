@@ -23,7 +23,7 @@ class MapleEntry {
         int getDataOffset() const;
         uint32_t getByteSize() const;
         const std::string& getName() const;
-        virtual void extract(std::ifstream&) const;
+        virtual void extract(std::ifstream&);
         virtual void print() const;
     private:
         const std::string name;
@@ -46,7 +46,7 @@ class MapleFolder: public MapleEntry {
         ~MapleFolder() {}
 
         // @TODO
-        void extract(std::ifstream&) const;
+        void extract(std::ifstream&);
         void addEntry(std::unique_ptr<MapleEntry>);
         void print() const;
         const std::vector<std::unique_ptr<MapleEntry>>& getEntries() const {
@@ -108,6 +108,7 @@ class BasicWZFile : public WZFile {
         ~BasicWZFile() {}
 
         void print() const;
+        void extract();
     protected:
         using WZFile::sanityCheck;
         bool sanityCheck();

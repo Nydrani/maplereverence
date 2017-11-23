@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 #include "wztool.hpp"
 #include "wzfile.hpp"
@@ -267,6 +268,10 @@ void BasicWZFile::print() const {
     root->print();
 }
 
+void BasicWZFile::extract() {
+    root->extract(stream);
+}
+
 void BasicWZFile::findDataOffsets(MapleFolder* folder) {
     // set folder offset to current
     folder->setDataOffset(stream.tellg());
@@ -315,21 +320,22 @@ void MapleEntry::print() const {
     std::cout << checksum << ' ' << unknown << '\n';
 }
 
-void MapleEntry::extract(std::ifstream& stream) const {
+void MapleEntry::extract(std::ifstream& stream) {
     // store cur pos
     auto curPos = stream.tellg();
 
     // move to pos and read bytesize into buffer
     stream.seekg(dataOffset, std::ios::beg);
-    std::vector<char> buffer;
-    buffer.reserve(bytesize);
-    stream.read(&buffer[0], bytesize);
+
+    std::ofstream outStream(name, std::ios::out | std::ios::binary);
+    std::copy_n(std::istreambuf_iterator<char>(stream), bytesize,
+                std::ostreambuf_iterator<char>(outStream));
 
     // restore old pos
     stream.seekg(curPos);
 }
 
-void MapleFolder::extract(std::ifstream& stream) const {
+void MapleFolder::extract(std::ifstream& stream) {
     for (const auto& entry : entries) {
         auto folder = dynamic_cast<MapleFolder*>(entry.get());
         if (folder != nullptr) {
