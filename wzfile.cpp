@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
 
 #include "wztool.hpp"
 #include "wzfile.hpp"
@@ -210,16 +209,14 @@ void BasicWZFile::readHeader() {
 
 void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
     int32_t numFiles = readCompressedInt();
-    std::cout << "Num files: " << numFiles << '\n';
+    std::cout << folder->getName() << " | Num files: " << numFiles << '\n';
 
     for (int i = 0; i < numFiles; ++i) {
         int curPos = stream.tellg();
         uint8_t flag = readUnsignedByte();
-        // symlink
+        // string symlink
         if (flag == 2) { //0b10
-            // @TODO possible issue here
             int32_t stringOffset = readInt() + header.headerSize;
-            std::cout << stringOffset << '\n';
             std::string name = readEncryptedString(stringOffset);
             int32_t size = readCompressedInt();
             int32_t checksum = readCompressedInt();
@@ -270,13 +267,81 @@ void BasicWZFile::print() const {
     root->print();
 }
 
+void BasicWZFile::findDataOffsets(MapleFolder* folder) {
+    // set folder offset to current
+    folder->setDataOffset(stream.tellg());
+
+    // @TODO folders might just be ALWAYS physically located after files
+    // @TODO for easier tree traversing --> so then two loops arent required
+    // files are located before folders
+    for (const auto& entry : folder->getEntries()) {
+        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        if (folder == nullptr) {
+            entry->setDataOffset(stream.tellg());
+            stream.seekg(entry->getByteSize(), std::ios::cur);
+        }
+    }
+
+    // folders are located after files
+    for (const auto& entry : folder->getEntries()) {
+        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        if (folder != nullptr) {
+            findDataOffsets(folder);
+        }
+    }
+}
+
+
+void MapleEntry::setDataOffset(int dataOffset) {
+    this->dataOffset = dataOffset;
+}
+
+int MapleEntry::getDataOffset() const {
+    return dataOffset;
+}
+
+uint32_t MapleEntry::getByteSize() const {
+    return bytesize;
+}
+
+const std::string& MapleEntry::getName() const {
+    return name;
+}
+
+
 void MapleEntry::print() const {
-    std::cout << name << " | " << offset << ' ';
-    std::cout << bytesize << ' ' << checksum << ' ' << unknown << '\n';
+    std::cout << name << " | " << headerOffset << ' ';
+    std::cout << dataOffset << " | " << bytesize << ' ';
+    std::cout << checksum << ' ' << unknown << '\n';
+}
+
+void MapleEntry::extract(std::ifstream& stream) const {
+    // store cur pos
+    auto curPos = stream.tellg();
+
+    // move to pos and read bytesize into buffer
+    stream.seekg(dataOffset, std::ios::beg);
+    std::vector<char> buffer;
+    buffer.reserve(bytesize);
+    stream.read(&buffer[0], bytesize);
+
+    // restore old pos
+    stream.seekg(curPos);
+}
+
+void MapleFolder::extract(std::ifstream& stream) const {
+    for (const auto& entry : entries) {
+        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        if (folder != nullptr) {
+            folder->extract(stream);
+        } else {
+            entry->extract(stream);
+        }
+    }
 }
 
 void MapleFolder::addEntry(std::unique_ptr<MapleEntry> pointer) {
-    entries.emplace(std::move(pointer));
+    entries.emplace_back(std::move(pointer));
 }
 
 void MapleFolder::print() const {

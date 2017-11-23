@@ -2,7 +2,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
-#include <set>
+#include <vector>
 
 #ifndef MAPLEREVERENCE_WZFILE
 #define MAPLEREVERENCE_WZFILE
@@ -15,17 +15,23 @@ class MapleEntry {
                 const uint32_t unknown,
                 const int offset)
         : name(name), bytesize(bytesize), checksum(checksum),
-          unknown(unknown), offset(offset)
+          unknown(unknown), headerOffset(offset), dataOffset(0)
         {}
         virtual ~MapleEntry() {};
 
+        void setDataOffset(int);
+        int getDataOffset() const;
+        uint32_t getByteSize() const;
+        const std::string& getName() const;
+        virtual void extract(std::ifstream&) const;
         virtual void print() const;
     private:
         const std::string name;
         const uint32_t bytesize;
         const int32_t checksum;
         const uint32_t unknown;
-        const int offset;
+        const int headerOffset;
+        int dataOffset;
 };
 
 class MapleFolder: public MapleEntry {
@@ -40,14 +46,14 @@ class MapleFolder: public MapleEntry {
         ~MapleFolder() {}
 
         // @TODO
-        //void extractMapleData(std::ifstream&);
+        void extract(std::ifstream&) const;
         void addEntry(std::unique_ptr<MapleEntry>);
         void print() const;
-        const std::set<std::unique_ptr<MapleEntry>>& getEntries() const {
+        const std::vector<std::unique_ptr<MapleEntry>>& getEntries() const {
             return entries;
         }
     private:
-        std::set<std::unique_ptr<MapleEntry>> entries;
+        std::vector<std::unique_ptr<MapleEntry>> entries;
 };
 
 
@@ -93,9 +99,11 @@ class BasicWZFile : public WZFile {
             }
 
             root = std::unique_ptr<MapleFolder>(
-                    new MapleFolder("Root", 0, 0, 0, 0));
+                    new MapleFolder("Root", 0, 0, 0, stream.tellg()));
             std::cout << "Reading Entries\n";
+
             generateMapleEntries(root.get());
+            findDataOffsets(root.get());
         }
         ~BasicWZFile() {}
 
@@ -113,7 +121,8 @@ class BasicWZFile : public WZFile {
         };
         Header header;
         void readHeader();
-        void generateMapleEntries(MapleFolder *folder);
+        void generateMapleEntries(MapleFolder* folder);
+        void findDataOffsets(MapleFolder* folder);
 
         std::unique_ptr<MapleFolder> root;
 };
