@@ -7,10 +7,9 @@
 #define MAPLEREVERENCE_CONSTANTS
 
 namespace maplereverence {
-    const std::string listWZName = "List.wz";
-    const std::string wzExtension = ".wz";
-    const boost::filesystem::path extractPath("extracted");
-    const boost::filesystem::path wzPath("wz");
+    const std::string listWZName("List.wz");
+    const std::string wzExtension(".wz");
+    const std::string extractPath("extracted");
     const char imgSanityByte = 0x73;
 
     // unicode is 2 bytes of ascii joined together

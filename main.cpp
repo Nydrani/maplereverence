@@ -18,9 +18,9 @@
 int main(int argc, char* argv[]) {
     // exit if incorrect num of parameters
     if (argc != 2) {
-        std::cout << "Usage: ./MapleReverence <MaplestoryFolderPath>";
-        std::cout << "Example: ./MapleReverence maplestory";
-        std::cout << std::endl;
+        std::cout << "Usage: ./MapleReverence <MaplestoryFolderPath>\n";
+        std::cout << "Example: ./MapleReverence maplestory\n";
+        std::cout << std::flush;
         return EXIT_FAILURE_PARAM;
     }
 
@@ -29,16 +29,21 @@ int main(int argc, char* argv[]) {
 
     // exit if nonexistent folder
     if (!boost::filesystem::is_directory(wzFolder)) {
-        std::cout << "Error: Folder does not exist" << std::endl;
+        std::cout << "Usage: ./MapleReverence <MaplestoryFolderPath>\n";
+        std::cout << "Error: '" << wzFolder << "' does not exist\n";
         return EXIT_FAILURE_NONEXISTENT_FOLDER;
     }
 
+    // store cwd and traverse to wz directory
+    auto curPath = boost::filesystem::current_path();
+    chdir(wzFolder);
+
     // populate map with wz files from folder
-    boost::filesystem::directory_iterator wzIt(wzFolder);
+    boost::filesystem::directory_iterator wzIt(".");
     boost::filesystem::directory_iterator endIt;
     for (; wzIt != endIt; ++wzIt) {
         const boost::filesystem::path filePath(wzIt->path().filename());
-        std::cout << filePath << '\n';
+        std::cout << filePath << std::endl;
 
         // skip non wz files
         if (filePath.extension() != maplereverence::wzExtension) {
@@ -54,6 +59,9 @@ int main(int argc, char* argv[]) {
                     new BasicWZFile(filePath.string())));
     }
 
+    // restore back to original path
+    chdir(curPath.c_str());
+
     // create directory, traverse and extract
     boost::filesystem::create_directory(maplereverence::extractPath);
     chdir(maplereverence::extractPath.c_str());
@@ -61,9 +69,10 @@ int main(int argc, char* argv[]) {
     for (const auto& file : files) {
         std::cout << "===== " << file.second->getName() << " =====\n";
         file.second->print();
-        std::cout << "Extracting: " << file.second->getName() << '\n';
+        std::cout << "Extracting: " << file.second->getName();
+        std::cout << std::endl;;
         file.second->extract();
-        std::cout << std::endl;
+        std::cout << '\n';
     }
 
     return EXIT_SUCCESS;
