@@ -1,3 +1,4 @@
-*.wz
-output
+wz
 build
+extracted
+output

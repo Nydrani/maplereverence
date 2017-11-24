@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+
 #ifndef MAPLEREVERENCE_WZFILE
 #define MAPLEREVERENCE_WZFILE
 
@@ -45,7 +46,6 @@ class MapleFolder: public MapleEntry {
         {}
         ~MapleFolder() {}
 
-        // @TODO
         void extract(std::ifstream&);
         void addEntry(std::unique_ptr<MapleEntry>);
         void print() const;
@@ -62,6 +62,8 @@ class WZFile {
         WZFile(const std::string& name)
             : name(name), stream(name, std::ios::in | std::ios::binary) {}
         virtual ~WZFile() {};
+
+        const std::string& getName() const;
     protected:
         int8_t readByte();
         uint8_t readUnsignedByte();
@@ -88,19 +90,18 @@ class BasicWZFile : public WZFile {
         BasicWZFile(const std::string& name)
             : WZFile(name) {
             if (!WZFile::sanityCheck()) {
-                std::cout << "Invalid Data!\n";
+                std::cout << "Invalid Data\n";
                 return;
             }
 
             readHeader();
             if (!sanityCheck()) {
-                std::cout << "Invalid Header!\n";
+                std::cout << "Invalid Header\n";
                 return;
             }
 
             root = std::unique_ptr<MapleFolder>(
-                    new MapleFolder("Root", 0, 0, 0, stream.tellg()));
-            std::cout << "Reading Entries\n";
+                    new MapleFolder(name, 0, 0, 0, stream.tellg()));
 
             generateMapleEntries(root.get());
             findDataOffsets(root.get());

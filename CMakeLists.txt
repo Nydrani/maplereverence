@@ -19,4 +19,9 @@ add_executable (MapleReverence main.cpp)
 target_link_libraries (MapleReverence WZFile)
 target_link_libraries (MapleReverence WZTool)
 
+# link boost libraries
+find_package(Boost COMPONENTS system filesystem REQUIRED)
+target_link_libraries (MapleReverence ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (MapleReverence ${Boost_SYSTEM_LIBRARY})
+
 install (TARGETS MapleReverence DESTINATION bin)

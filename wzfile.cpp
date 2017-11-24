@@ -3,8 +3,18 @@
 #include <vector>
 #include <algorithm>
 
+#include <unistd.h>
+
+#include <boost/filesystem.hpp>
+
 #include "wztool.hpp"
 #include "wzfile.hpp"
+#include "constants.hpp"
+
+
+const std::string& WZFile::getName() const {
+    return name;
+}
 
 int8_t WZFile::readByte() {
     //std::cout << "CurPos<<: " << stream.tellg() << '\n';
@@ -233,7 +243,7 @@ void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
             int32_t size = readCompressedInt();
             int32_t checksum = readCompressedInt();
             int32_t unknown = readInt();
-            folder->addEntry(std::unique_ptr<MapleEntry>(
+            folder->addEntry(std::unique_ptr<MapleFolder>(
                         new MapleFolder(name, size, checksum, unknown, curPos)));
         // entry
         } else if (flag == 4) { //0b11
@@ -327,23 +337,31 @@ void MapleEntry::extract(std::ifstream& stream) {
     // move to pos and read bytesize into buffer
     stream.seekg(dataOffset, std::ios::beg);
 
-    std::ofstream outStream(name, std::ios::out | std::ios::binary);
-    std::copy_n(std::istreambuf_iterator<char>(stream), bytesize,
+    char sanityByte = stream.get();
+
+    if (sanityByte == maplereverence::imgSanityByte) {
+        stream.seekg(dataOffset, std::ios::beg);
+        std::ofstream outStream(name, std::ios::out | std::ios::binary);
+        std::copy_n(std::istreambuf_iterator<char>(stream), bytesize,
                 std::ostreambuf_iterator<char>(outStream));
+    }
 
     // restore old pos
     stream.seekg(curPos);
 }
 
 void MapleFolder::extract(std::ifstream& stream) {
+    // make folder and traverse into it
+    const boost::filesystem::path folderPath(getName());
+    boost::filesystem::create_directory(folderPath);
+    chdir(getName().c_str());
+
     for (const auto& entry : entries) {
-        auto folder = dynamic_cast<MapleFolder*>(entry.get());
-        if (folder != nullptr) {
-            folder->extract(stream);
-        } else {
-            entry->extract(stream);
-        }
+        entry->extract(stream);
     }
+
+    // traverse back
+    chdir("../");
 }
 
 void MapleFolder::addEntry(std::unique_ptr<MapleEntry> pointer) {
@@ -354,12 +372,7 @@ void MapleFolder::print() const {
     std::cout << "Folder size: " << entries.size() << ' ';
     MapleEntry::print(); 
     for (const auto& entry : entries) {
-        auto folder = dynamic_cast<MapleFolder*>(entry.get());
-        if (folder != nullptr) {
-            folder->print();
-        } else {
-            entry->print();
-        }
+        entry->print();
     }
 }
 
