@@ -11,17 +11,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic")
 
-
-add_library (WZFile wzfile.cpp)
-add_library (WZTool wztool.cpp)
-
-add_executable (MapleReverence main.cpp)
-target_link_libraries (MapleReverence WZFile)
-target_link_libraries (MapleReverence WZTool)
-
 # link boost libraries
 find_package(Boost COMPONENTS system filesystem REQUIRED)
-target_link_libraries (MapleReverence ${Boost_FILESYSTEM_LIBRARY})
-target_link_libraries (MapleReverence ${Boost_SYSTEM_LIBRARY})
 
-install (TARGETS MapleReverence DESTINATION bin)
+add_library (WZTool wztool.cpp)
+add_library (WZFile wzfile.cpp)
+add_library (IMGFile imgfile.cpp)
+
+add_executable (WZExtractor wzextractor.cpp)
+add_executable (IMGExtractor imgextractor.cpp)
+
+target_link_libraries (WZExtractor WZFile)
+target_link_libraries (WZExtractor WZTool)
+target_link_libraries (WZExtractor ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (WZExtractor ${Boost_SYSTEM_LIBRARY})
+
+target_link_libraries (IMGExtractor IMGFile)
+target_link_libraries (IMGExtractor WZTool)
+target_link_libraries (IMGExtractor ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
+
+install (TARGETS WZExtractor IMGExtractor DESTINATION bin)

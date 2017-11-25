@@ -7,7 +7,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "wzfile.hpp"
+#include "imgfile.hpp"
 #include "constants.hpp"
 
 #define EXIT_SUCCESS 0
@@ -18,25 +18,25 @@
 int main(int argc, char* argv[]) {
     // exit if incorrect num of parameters
     if (argc != 2) {
-        std::cout << "Usage: ./MapleReverence <MaplestoryFolderPath>\n";
-        std::cout << "Example: ./MapleReverence maplestory\n";
+        std::cout << "Usage: ./IMGExtractor <IMGFolderPath>\n";
+        std::cout << "Example: ./IMGExtractor maplestory\n";
         std::cout << std::flush;
         return EXIT_FAILURE_PARAM;
     }
 
-    const char* wzFolder = argv[1];
-    std::map<std::string, std::unique_ptr<BasicWZFile>> files; 
+    const char* imgFolder = argv[1];
+    std::map<std::string, std::unique_ptr<BasicIMGFile>> files; 
 
     // exit if nonexistent folder
-    if (!boost::filesystem::is_directory(wzFolder)) {
-        std::cout << "Usage: ./MapleReverence <MaplestoryFolderPath>\n";
-        std::cout << "Error: '" << wzFolder << "' does not exist\n";
+    if (!boost::filesystem::is_directory(imgFolder)) {
+        std::cout << "Usage: ./IMGExtractor <IMGFolderPath>\n";
+        std::cout << "Error: Folder '" << imgFolder << "' does not exist\n";
         return EXIT_FAILURE_NONEXISTENT_FOLDER;
     }
 
     // store cwd and traverse to wz directory
     auto curPath = boost::filesystem::current_path();
-    chdir(wzFolder);
+    chdir(imgFolder);
 
     // populate map with wz files from folder
     boost::filesystem::directory_iterator wzIt(".");
@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        files.emplace(filePath.string(), std::unique_ptr<BasicWZFile>(
-                    new BasicWZFile(filePath.string())));
+        files.emplace(filePath.string(), std::unique_ptr<BasicIMGFile>(
+                    new BasicIMGFile(filePath.string())));
     }
 
     // restore back to original path
@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
     boost::filesystem::create_directory(maplereverence::extractPath);
     chdir(maplereverence::extractPath.c_str());
 
+    /*
     for (const auto& file : files) {
         std::cout << "===== " << file.second->getName() << " =====\n";
         file.second->print();
@@ -74,6 +75,7 @@ int main(int argc, char* argv[]) {
         file.second->extract();
         std::cout << '\n';
     }
+    */
 
     return EXIT_SUCCESS;
 }
