@@ -9,6 +9,12 @@
 #ifndef MAPLEREVERENCE_IMGFILE
 #define MAPLEREVERENCE_IMGFILE
 
+class IMGCategory {
+};
+
+class IMGEntry {
+};
+
 class IMGFile {
     public:
         IMGFile(const std::string& name) : name(name), accessor(name) {

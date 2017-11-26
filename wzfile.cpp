@@ -161,7 +161,7 @@ void MapleEntry::extract(MapleAccessor& accessor) {
 
     char sanityByte = accessor.readByte();
 
-    if (sanityByte == maplereverence::imgSanityByte) {
+    if (sanityByte == maplereverence::imgCategoryStringByte) {
         accessor.seek(dataOffset, std::ios::beg);
         std::ofstream outStream(name, std::ios::out | std::ios::binary);
         std::copy_n(std::istreambuf_iterator<char>(accessor.getStream()), bytesize,

@@ -21,7 +21,7 @@ bool IMGFile::sanityCheck() {
     }
 
     char firstByte = accessor.readByte();
-    if (firstByte != maplereverence::imgSanityByte) {
+    if (firstByte != maplereverence::imgCategoryStringByte) {
         return false;
     }
 
