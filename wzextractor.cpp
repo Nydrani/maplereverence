@@ -43,7 +43,6 @@ int main(int argc, char* argv[]) {
     boost::filesystem::directory_iterator endIt;
     for (; wzIt != endIt; ++wzIt) {
         const boost::filesystem::path filePath(wzIt->path().filename());
-        std::cout << filePath << std::endl;
 
         // skip non wz files
         if (filePath.extension() != maplereverence::wzExtension) {
@@ -63,8 +62,8 @@ int main(int argc, char* argv[]) {
     chdir(curPath.c_str());
 
     // create directory, traverse and extract
-    boost::filesystem::create_directory(maplereverence::extractPath);
-    chdir(maplereverence::extractPath.c_str());
+    boost::filesystem::create_directory(maplereverence::wzExtractPath);
+    chdir(maplereverence::wzExtractPath.c_str());
 
     for (const auto& file : files) {
         std::cout << "===== " << file.second->getName() << " =====\n";

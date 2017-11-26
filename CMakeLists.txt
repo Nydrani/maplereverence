@@ -15,19 +15,25 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic")
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 add_library (WZTool wztool.cpp)
+add_library (MapleAccessor mapleaccessor.cpp)
 add_library (WZFile wzfile.cpp)
 add_library (IMGFile imgfile.cpp)
+
+target_link_libraries (MapleAccessor WZTool)
+
 
 add_executable (WZExtractor wzextractor.cpp)
 add_executable (IMGExtractor imgextractor.cpp)
 
 target_link_libraries (WZExtractor WZFile)
 target_link_libraries (WZExtractor WZTool)
+target_link_libraries (WZExtractor MapleAccessor)
 target_link_libraries (WZExtractor ${Boost_FILESYSTEM_LIBRARY})
 target_link_libraries (WZExtractor ${Boost_SYSTEM_LIBRARY})
 
 target_link_libraries (IMGExtractor IMGFile)
 target_link_libraries (IMGExtractor WZTool)
+target_link_libraries (IMGExtractor MapleAccessor)
 target_link_libraries (IMGExtractor ${Boost_FILESYSTEM_LIBRARY})
 target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
 

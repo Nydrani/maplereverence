@@ -1,9 +1,9 @@
 #include <iostream>
 #include <fstream>
-#include <map>
 #include <memory>
 #include <vector>
 
+#include "mapleaccessor.hpp"
 
 #ifndef MAPLEREVERENCE_WZFILE
 #define MAPLEREVERENCE_WZFILE
@@ -15,16 +15,15 @@ class MapleEntry {
                 const int32_t checksum,
                 const uint32_t unknown,
                 const int offset)
-        : name(name), bytesize(bytesize), checksum(checksum),
-          unknown(unknown), headerOffset(offset), dataOffset(0)
-        {}
+            : name(name), bytesize(bytesize), checksum(checksum),
+            unknown(unknown), headerOffset(offset), dataOffset(0) {}
         virtual ~MapleEntry() {};
 
         void setDataOffset(int);
         int getDataOffset() const;
         uint32_t getByteSize() const;
         const std::string& getName() const;
-        virtual void extract(std::ifstream&);
+        virtual void extract(MapleAccessor&);
         virtual void print() const;
     private:
         const std::string name;
@@ -42,11 +41,10 @@ class MapleFolder: public MapleEntry {
                 const int32_t checksum,
                 const uint32_t unknown,
                 const int offset)
-        : MapleEntry(name, bytesize, checksum, unknown, offset)
-        {}
+            : MapleEntry(name, bytesize, checksum, unknown, offset) {}
         ~MapleFolder() {}
 
-        void extract(std::ifstream&);
+        void extract(MapleAccessor&);
         void addEntry(std::unique_ptr<MapleEntry>);
         void print() const;
         const std::vector<std::unique_ptr<MapleEntry>>& getEntries() const {
@@ -57,42 +55,9 @@ class MapleFolder: public MapleEntry {
 };
 
 
-class WZFile {
+class BasicWZFile {
     public:
-        WZFile(const std::string& name)
-            : name(name), stream(name, std::ios::in | std::ios::binary) {}
-        virtual ~WZFile() {};
-
-        const std::string& getName() const;
-    protected:
-        int8_t readByte();
-        uint8_t readUnsignedByte();
-        int16_t readShort();
-        uint16_t readUnsignedShort();
-        int32_t readInt();
-        uint32_t readUnsignedInt();
-        int64_t readLong();
-        uint64_t readUnsignedLong();
-        std::string readString();
-        std::string readString(int length);
-        int32_t readCompressedInt();
-        std::string readEncryptedString();
-        std::string readEncryptedString(int offset);
-        virtual bool sanityCheck() const;
-
-        const std::string name;
-        std::ifstream stream;
-    private:
-};
-
-class BasicWZFile : public WZFile {
-    public:
-        BasicWZFile(const std::string& name)
-            : WZFile(name) {
-            if (!WZFile::sanityCheck()) {
-                std::cout << "Invalid Data\n";
-                return;
-            }
+        BasicWZFile(const std::string& name) : name(name), accessor(name) {
 
             readHeader();
             if (!sanityCheck()) {
@@ -101,7 +66,7 @@ class BasicWZFile : public WZFile {
             }
 
             root = std::unique_ptr<MapleFolder>(
-                    new MapleFolder(name, 0, 0, 0, stream.tellg()));
+                    new MapleFolder(name, 0, 0, 0, accessor.tell()));
 
             generateMapleEntries(root.get());
             findDataOffsets(root.get());
@@ -110,10 +75,14 @@ class BasicWZFile : public WZFile {
 
         void print() const;
         void extract();
-    protected:
-        using WZFile::sanityCheck;
-        bool sanityCheck();
+        const std::string& getName() const;
+
     private:
+        bool sanityCheck();
+        void readHeader();
+        void generateMapleEntries(MapleFolder* folder);
+        void findDataOffsets(MapleFolder* folder);
+
         struct Header {
             std::string fileType;
             uint64_t dataSize;
@@ -122,19 +91,19 @@ class BasicWZFile : public WZFile {
             uint16_t version;
         };
         Header header;
-        void readHeader();
-        void generateMapleEntries(MapleFolder* folder);
-        void findDataOffsets(MapleFolder* folder);
+
+        const std::string name;
+        MapleAccessor accessor;
 
         std::unique_ptr<MapleFolder> root;
 };
 
-class ListWZFile : public WZFile {
+class ListWZFile {
     public:
-        ListWZFile(const std::string& name) : WZFile(name) {}
+        ListWZFile(const std::string& name) : name(name) {}
         ~ListWZFile() {}
     private:
-        bool test;
+        const std::string name;
 };
 
 #endif

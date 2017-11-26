@@ -9,7 +9,9 @@
 namespace maplereverence {
     const std::string listWZName("List.wz");
     const std::string wzExtension(".wz");
-    const std::string extractPath("extracted");
+    const std::string imgExtension(".img");
+    const std::string wzExtractPath("wzextracted");
+    const std::string imgExtractPath("imgextracted");
     const char imgSanityByte = 0x73;
 
     // unicode is 2 bytes of ascii joined together

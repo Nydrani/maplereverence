@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     }
 
     const char* imgFolder = argv[1];
-    std::map<std::string, std::unique_ptr<BasicIMGFile>> files; 
+    std::map<std::string, std::unique_ptr<IMGFile>> files; 
 
     // exit if nonexistent folder
     if (!boost::filesystem::is_directory(imgFolder)) {
@@ -39,43 +39,32 @@ int main(int argc, char* argv[]) {
     chdir(imgFolder);
 
     // populate map with wz files from folder
-    boost::filesystem::directory_iterator wzIt(".");
+    boost::filesystem::directory_iterator imgIt(".");
     boost::filesystem::directory_iterator endIt;
-    for (; wzIt != endIt; ++wzIt) {
-        const boost::filesystem::path filePath(wzIt->path().filename());
-        std::cout << filePath << std::endl;
+    for (; imgIt != endIt; ++imgIt) {
+        const boost::filesystem::path filePath(imgIt->path().filename());
 
-        // skip non wz files
-        if (filePath.extension() != maplereverence::wzExtension) {
+        // skip non img files
+        if (filePath.extension() != maplereverence::imgExtension) {
             continue;
         }
         
-        // skip List.wz
-        if (filePath.string() == maplereverence::listWZName) {
-            continue;
-        }
-
-        files.emplace(filePath.string(), std::unique_ptr<BasicIMGFile>(
-                    new BasicIMGFile(filePath.string())));
+        files.emplace(filePath.string(), std::unique_ptr<IMGFile>(
+                    new IMGFile(filePath.string())));
     }
 
     // restore back to original path
     chdir(curPath.c_str());
 
     // create directory, traverse and extract
-    boost::filesystem::create_directory(maplereverence::extractPath);
-    chdir(maplereverence::extractPath.c_str());
+    //boost::filesystem::create_directory(maplereverence::imgExtractPath);
+    //chdir(maplereverence::imgExtractPath.c_str());
 
-    /*
     for (const auto& file : files) {
         std::cout << "===== " << file.second->getName() << " =====\n";
         file.second->print();
-        std::cout << "Extracting: " << file.second->getName();
         std::cout << std::endl;;
-        file.second->extract();
-        std::cout << '\n';
     }
-    */
 
     return EXIT_SUCCESS;
 }
