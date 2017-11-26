@@ -30,3 +30,9 @@ bool IMGFile::sanityCheck() {
 
 void IMGFile::buildIMGStructure() {
 }
+
+void IMGFile::parseIMGCategory() {
+}
+
+void IMGFile::parseIMGEntry() {
+}

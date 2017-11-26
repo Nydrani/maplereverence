@@ -17,7 +17,7 @@ class MapleEntry {
                 const int offset)
             : name(name), bytesize(bytesize), checksum(checksum),
             unknown(unknown), headerOffset(offset), dataOffset(0) {}
-        virtual ~MapleEntry() {};
+        virtual ~MapleEntry() {}
 
         void setDataOffset(int);
         int getDataOffset() const;
