@@ -23,7 +23,7 @@ class MapleAccessor {
         std::string readString(int length);
         int32_t readCompressedInt();
         std::string readEncryptedString();
-        std::string readEncryptedString(int offset);
+        std::string readEncryptedString(int32_t offset);
         void seek(std::ifstream::pos_type p);
         void seek(std::ifstream::off_type off, std::ios_base::seekdir dir);
         std::ifstream::pos_type tell();

@@ -25,6 +25,7 @@ class MapleEntry {
         const std::string& getName() const;
         virtual void extract(MapleAccessor&);
         virtual void print() const;
+
     private:
         const std::string name;
         const uint32_t bytesize;
@@ -47,9 +48,8 @@ class MapleFolder: public MapleEntry {
         void extract(MapleAccessor&);
         void addEntry(std::unique_ptr<MapleEntry>);
         void print() const;
-        const std::vector<std::unique_ptr<MapleEntry>>& getEntries() const {
-            return entries;
-        }
+        const std::vector<std::unique_ptr<MapleEntry>>& getEntries() const;
+
     private:
         std::vector<std::unique_ptr<MapleEntry>> entries;
 };
@@ -58,15 +58,19 @@ class MapleFolder: public MapleEntry {
 class BasicWZFile {
     public:
         BasicWZFile(const std::string& name) : name(name), accessor(name) {
-
             readHeader();
-            if (!sanityCheck()) {
-                std::cout << "Invalid Header\n";
-                return;
-            }
 
-            root = std::unique_ptr<MapleFolder>(
-                    new MapleFolder(name, 0, 0, 0, accessor.tell()));
+            std::ios::pos_type curPos = accessor.tell();
+            if (!sanityCheck()) {
+                std::string exception("Invalid header at offset: ");
+                exception += std::to_string(accessor.tell());
+                throw std::runtime_error(exception);
+            }
+            accessor.seek(curPos);
+
+            root = std::unique_ptr<MapleFolder>(new MapleFolder(name,
+                        header.dataSize + header.headerSize, 0, 0,
+                        accessor.tell()));
 
             generateMapleEntries(root.get());
             findDataOffsets(root.get());
@@ -84,7 +88,7 @@ class BasicWZFile {
         void findDataOffsets(MapleFolder* folder);
 
         struct Header {
-            std::string fileType;
+            std::string fileIdentifier;
             uint64_t dataSize;
             uint32_t headerSize;
             std::string fileDesc;
@@ -102,6 +106,7 @@ class ListWZFile {
     public:
         ListWZFile(const std::string& name) : name(name) {}
         ~ListWZFile() {}
+
     private:
         const std::string name;
 };

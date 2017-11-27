@@ -164,11 +164,10 @@ std::string MapleAccessor::readEncryptedString() {
     return string;
 }
 
-std::string MapleAccessor::readEncryptedString(int offset) {
+std::string MapleAccessor::readEncryptedString(int32_t offset) {
     auto curPos = stream.tellg();
 
     stream.seekg(offset, std::ios::beg);
-    readByte();
     std::string string = readEncryptedString();
     stream.seekg(curPos);
 

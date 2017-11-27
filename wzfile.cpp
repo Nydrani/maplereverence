@@ -14,22 +14,23 @@ bool BasicWZFile::sanityCheck() {
         return false;
     }
 
+    if (header.fileIdentifier != maplereverence::wzIdentifier) {
+        return false;
+    }
+
     // check the size of file is the size given by the bytes
-    std::ios::pos_type curPos = accessor.tell();
     accessor.seek(0, std::ios::end);
     unsigned long fileSize = header.dataSize + header.headerSize;
     if (fileSize != static_cast<unsigned long>(accessor.tell())) {
         return false;
     }
-    // go back to where we were
-    accessor.seek(curPos);
 
     return true;
 }
 
 
 void BasicWZFile::readHeader() {
-    header.fileType = accessor.readString(4);
+    header.fileIdentifier = accessor.readString(4);
     header.dataSize = accessor.readUnsignedLong();
     header.headerSize = accessor.readUnsignedInt();
     header.fileDesc = accessor.readString();
@@ -44,8 +45,11 @@ void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
         int curPos = accessor.tell();
         uint8_t flag = accessor.readUnsignedByte();
         // string symlink
+        // @TODO this might just be a link to the name of the file
+        // @TODO not actually a symlink to a file
         if (flag == 2) { //0b10
-            int32_t stringOffset = accessor.readInt() + header.headerSize;
+            // @TODO a +1 is required because the offset arrives at the 'flag' variable
+            int32_t stringOffset = accessor.readInt() + header.headerSize + 1;
             std::string name = accessor.readEncryptedString(stringOffset);
             int32_t size = accessor.readCompressedInt();
             int32_t checksum = accessor.readCompressedInt();
@@ -74,12 +78,14 @@ void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
         } else {
             std::string exception("Unknown flag: ");
             exception += std::to_string(flag);
-            throw std::invalid_argument(exception);
+            exception += " at offset: ";
+            exception += std::to_string(accessor.tell());
+            throw std::runtime_error(exception);
         }
     }
 
     for (const auto& entry : folder->getEntries()) {
-        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        auto* folder = dynamic_cast<MapleFolder*>(entry.get());
         if (folder != nullptr) {
             generateMapleEntries(folder);
         }
@@ -88,7 +94,7 @@ void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
 
 void BasicWZFile::print() const {
     // print header
-    std::cout << header.fileType << ' ' << header.dataSize << ' ';
+    std::cout << header.fileIdentifier << ' ' << header.dataSize << ' ';
     std::cout << header.headerSize << ' ' << header.fileDesc << ' ';
     std::cout << header.version << '\n';
 
@@ -108,11 +114,9 @@ void BasicWZFile::findDataOffsets(MapleFolder* folder) {
     // set folder offset to current
     folder->setDataOffset(accessor.tell());
 
-    // @TODO folders might just be ALWAYS physically located after files
-    // @TODO for easier tree traversing --> so then two loops arent required
     // files are located before folders
     for (const auto& entry : folder->getEntries()) {
-        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        auto* folder = dynamic_cast<MapleFolder*>(entry.get());
         if (folder == nullptr) {
             entry->setDataOffset(accessor.tell());
             accessor.seek(entry->getByteSize(), std::ios::cur);
@@ -121,7 +125,7 @@ void BasicWZFile::findDataOffsets(MapleFolder* folder) {
 
     // folders are located after files
     for (const auto& entry : folder->getEntries()) {
-        auto folder = dynamic_cast<MapleFolder*>(entry.get());
+        auto* folder = dynamic_cast<MapleFolder*>(entry.get());
         if (folder != nullptr) {
             findDataOffsets(folder);
         }
@@ -161,12 +165,19 @@ void MapleEntry::extract(MapleAccessor& accessor) {
 
     char sanityByte = accessor.readByte();
 
-    if (sanityByte == maplereverence::imgCategoryStringByte) {
-        accessor.seek(dataOffset, std::ios::beg);
-        std::ofstream outStream(name, std::ios::out | std::ios::binary);
-        std::copy_n(std::istreambuf_iterator<char>(accessor.getStream()), bytesize,
-                std::ostreambuf_iterator<char>(outStream));
+    if (sanityByte != maplereverence::imgCategoryStringByte) {
+        std::string exception("Invalid sanity byte: ");
+        exception += std::to_string(sanityByte);
+        exception += " at offset: ";
+        exception += std::to_string(accessor.tell());
+        throw std::runtime_error(exception);
     }
+
+    // extract data
+    accessor.seek(dataOffset, std::ios::beg);
+    std::ofstream outStream(name, std::ios::out | std::ios::binary);
+    std::copy_n(std::istreambuf_iterator<char>(accessor.getStream()),
+            bytesize, std::ostreambuf_iterator<char>(outStream));
 
     // restore old pos
     accessor.seek(curPos);
@@ -198,3 +209,7 @@ void MapleFolder::print() const {
     }
 }
 
+const std::vector<std::unique_ptr<MapleEntry>>&
+MapleFolder::getEntries() const {
+    return entries;
+}
