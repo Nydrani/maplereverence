@@ -34,7 +34,12 @@ IMGEntry::getEntries() const {
 }
 
 void IMGEntry::print() const {
-    std::cout << name << " | " << value.get() << '\n';
+    std::cout << name << " | " << value.get();
+    if (entries.size() > 0) {
+        std::cout << " | Num files: " << entries.size();
+    }
+    std::cout << '\n';
+
     for (auto& entry : entries) {
         entry->print();
     }

@@ -20,7 +20,6 @@ int main(int argc, char* argv[]) {
     if (argc != 2) {
         std::cout << "Usage: ./WZExtractor <MaplestoryFolderPath>\n";
         std::cout << "Example: ./WZExtractor maplestory\n";
-        std::cout << std::flush;
         return EXIT_FAILURE_PARAM;
     }
 
