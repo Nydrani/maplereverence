@@ -170,7 +170,8 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
             parseIMGEntryExtended(newEntry.get());
             entry->addEntry(std::move(newEntry));
         }
-        //entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
+
+        entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
     } else if (entryType == "UOL") {
         entry->setType(IMGDataType::UOL);
 
