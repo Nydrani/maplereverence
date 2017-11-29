@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 
 #ifndef MAPLEREVERENCE_MAPLEACCESSOR
@@ -19,11 +20,15 @@ class MapleAccessor {
         uint32_t readUnsignedInt();
         int64_t readLong();
         uint64_t readUnsignedLong();
+        float readFloat();
         std::string readString();
         std::string readString(int length);
         int32_t readCompressedInt();
+        float readCompressedFloat();
+        double readCompressedDouble();
         std::string readEncryptedString();
-        std::string readEncryptedString(int32_t offset);
+        std::string readEncryptedString(uint32_t offset);
+        std::vector<uint8_t> readData(uint32_t length);
         void seek(std::ifstream::pos_type p);
         void seek(std::ifstream::off_type off, std::ios_base::seekdir dir);
         std::ifstream::pos_type tell();

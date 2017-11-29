@@ -13,8 +13,8 @@ namespace maplereverence {
     const std::string imgExtension(".img");
     const std::string wzExtractPath("wzextracted");
     const std::string imgExtractPath("imgextracted");
-    const char imgCategoryStringByte = 0x73;
-    const char imgCategoryLinkByte = 0x1B;
+    const char imgEntryStringByte = 0x73;
+    const char imgEntryLinkByte = 0x1B;
 
     // unicode is 2 bytes of ascii joined together
     const int8_t encryptionKeyUnicodeLength = 26;

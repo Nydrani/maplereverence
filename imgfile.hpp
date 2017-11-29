@@ -1,33 +1,15 @@
-#include <iostream>
-#include <fstream>
 #include <string>
-#include <map>
 #include <memory>
 #include <vector>
 
 #include <boost/variant.hpp>
 
 #include "mapleaccessor.hpp"
+#include "mapledata.hpp"
+
 
 #ifndef MAPLEREVERENCE_IMGFILE
 #define MAPLEREVERENCE_IMGFILE
-
-enum class IMGDataType : uint8_t {
-    NONE,
-    SHORT,
-    INT,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    PROPERTY,
-    CANVAS,
-    VECTOR,
-    CONVEX,
-    SOUND
-};
-
-typedef boost::variant<int16_t, int32_t, double, float, std::string>
-IMGDataVariant;
 
 class IMGEntry {
     public:
@@ -36,35 +18,33 @@ class IMGEntry {
 
         void setName(const std::string&);
         const std::string& getName() const;
-        void setType(const IMGDataType);
+        void setType(IMGDataType type);
         IMGDataType getType() const;
-        void setValue(const IMGDataVariant&);
-        const IMGDataVariant& getValue() const;
+
+        virtual void addEntry(std::unique_ptr<IMGEntry>);
+        const std::vector<std::unique_ptr<IMGEntry>>& getEntries() const;
 
         virtual void print() const;
 
     private:
         std::string name;
         IMGDataType type;
-        IMGDataVariant value;
-};
-
-class IMGCategory : public IMGEntry {
-    public:
-        IMGCategory() : IMGEntry() {}
-        ~IMGCategory() {}
-
-        void setByteSize(const int);
-        int getByteSize() const;
-
-        void addEntry(std::unique_ptr<IMGEntry>);
-        void print() const;
-        const std::vector<std::unique_ptr<IMGEntry>>& getEntries() const;
-
-    private:
-        int byteSize;
         std::vector<std::unique_ptr<IMGEntry>> entries;
 };
+
+class IMGValue: public IMGEntry {
+    public:
+        IMGValue() {}
+        ~IMGValue() {}
+
+        void setValue(std::unique_ptr<IMGData>);
+        IMGData* getValue() const;
+        void print() const;
+
+    private:
+        std::unique_ptr<IMGData> value;
+};
+
 
 class IMGFile {
     public:
@@ -77,7 +57,7 @@ class IMGFile {
             }
             accessor.seek(curPos);
 
-            root = std::unique_ptr<IMGCategory>(new IMGCategory());
+            root = std::unique_ptr<IMGEntry>(new IMGEntry());
 
             buildIMGStructure(root.get());
         }
@@ -89,17 +69,15 @@ class IMGFile {
 
     private:
         bool sanityCheck();
-        void buildIMGStructure(IMGCategory*);
-        void parseIMGCategory(IMGCategory*);
+        void buildIMGStructure(IMGEntry*);
         void parseIMGEntry(IMGEntry*);
+        void parseIMGValue(IMGValue*);
 
         const std::string name;
         MapleAccessor accessor;
 
-        std::unique_ptr<IMGCategory> root;
+        std::unique_ptr<IMGEntry> root;
 };
 
 
-std::ostream& operator<<(std::ostream& os, const IMGDataType& obj);
-        
 #endif

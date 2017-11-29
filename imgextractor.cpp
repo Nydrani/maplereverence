@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
             continue;
         }
         
+        std::cout << filePath << '\n';
         files.emplace(filePath.string(), std::unique_ptr<IMGFile>(
                     new IMGFile(filePath.string())));
     }

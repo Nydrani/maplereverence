@@ -27,4 +27,24 @@ namespace maplereverence {
 
         return clone;
     }
+
+    std::string detectString(uint8_t newFlag, uint8_t linkFlag, MapleAccessor& accessor) {
+        uint8_t stringParseMethod = accessor.readUnsignedByte();
+        std::string string;
+
+        if (stringParseMethod == newFlag) {
+            string = accessor.readEncryptedString();
+        } else if (stringParseMethod == linkFlag) {
+            int32_t offset = accessor.readInt();
+            string = accessor.readEncryptedString(offset);
+        } else {
+            std::string exception("Invalid string parse method: ");
+            exception += std::to_string(stringParseMethod);
+            exception += " at offset: ";
+            exception += std::to_string(accessor.tell());
+            throw std::runtime_error(exception);
+        }
+
+        return string;
+    }
 }

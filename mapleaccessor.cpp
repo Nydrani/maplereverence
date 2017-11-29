@@ -1,4 +1,7 @@
 #include <iostream>
+#include <fstream>
+#include <iterator>
+#include <algorithm>
 
 #include "wztool.hpp"
 #include "mapleaccessor.hpp"
@@ -68,6 +71,14 @@ uint64_t MapleAccessor::readUnsignedLong() {
     return l;
 }
 
+float MapleAccessor::readFloat() {
+    //std::cout << "CurPos<<: " << stream.tellg() << '\n';
+
+    float f;
+    stream.read(reinterpret_cast<char *>(&f), sizeof(f));
+    return f;
+}
+
 std::string MapleAccessor::readString() {
     //std::cout << "CurPos<<: " << stream.tellg() << '\n';
 
@@ -86,10 +97,22 @@ std::string MapleAccessor::readString(int length) {
 }
 
 int32_t MapleAccessor::readCompressedInt() {
-    int32_t val = readByte();
+    int8_t flag = readByte();
+    int32_t val = flag;
 
-    if (val == -128) {
+    if (flag == -128) {
         val = readInt();
+    }
+
+    return val;
+}
+
+float MapleAccessor::readCompressedFloat() {
+    int8_t flag = readByte();
+    float val = 0;
+
+    if (flag == -128) {
+        val = readFloat();
     }
 
     return val;
@@ -164,7 +187,7 @@ std::string MapleAccessor::readEncryptedString() {
     return string;
 }
 
-std::string MapleAccessor::readEncryptedString(int32_t offset) {
+std::string MapleAccessor::readEncryptedString(uint32_t offset) {
     auto curPos = stream.tellg();
 
     stream.seekg(offset, std::ios::beg);
@@ -172,6 +195,18 @@ std::string MapleAccessor::readEncryptedString(int32_t offset) {
     stream.seekg(curPos);
 
     return string;
+}
+
+std::vector<uint8_t> MapleAccessor::readData(uint32_t length) {
+    // initialise and reserve length
+    std::vector<uint8_t> data;
+    data.reserve(length);
+
+    // extract data
+    std::copy_n(std::istreambuf_iterator<char>(stream),
+            length, data.begin());
+
+    return data;
 }
 
 void MapleAccessor::seek(std::ifstream::pos_type pos) {

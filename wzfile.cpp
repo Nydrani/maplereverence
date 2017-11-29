@@ -49,7 +49,7 @@ void BasicWZFile::generateMapleEntries(MapleFolder* folder) {
         // @TODO not actually a symlink to a file
         if (flag == 2) { //0b10
             // @TODO a +1 is required because the offset arrives at the 'flag' variable
-            int32_t stringOffset = accessor.readInt() + header.headerSize + 1;
+            uint32_t stringOffset = accessor.readUnsignedInt() + header.headerSize + 1;
             std::string name = accessor.readEncryptedString(stringOffset);
             int32_t size = accessor.readCompressedInt();
             int32_t checksum = accessor.readCompressedInt();
@@ -165,7 +165,7 @@ void MapleEntry::extract(MapleAccessor& accessor) {
 
     char sanityByte = accessor.readByte();
 
-    if (sanityByte != maplereverence::imgCategoryStringByte) {
+    if (sanityByte != maplereverence::imgEntryStringByte) {
         std::string exception("Invalid sanity byte: ");
         exception += std::to_string(sanityByte);
         exception += " at offset: ";
