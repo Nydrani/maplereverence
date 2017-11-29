@@ -25,11 +25,15 @@ const std::string& StringIMGData::getVal() const {
     return val;
 }
 
-const std::vector<uint8_t>& CanvasIMGData::getVal() const {
+const std::pair<int32_t, int32_t>& VectorIMGData::getVal() const {
     return val;
 }
 
-const std::pair<int32_t, int32_t>& VectorIMGData::getVal() const {
+const std::pair<int32_t, int32_t>& ConvexIMGData::getVal() const {
+    return val;
+}
+
+const std::vector<uint8_t>& CanvasIMGData::getVal() const {
     return val;
 }
 
@@ -81,13 +85,17 @@ std::ostream& operator<<(std::ostream& os, IMGData* data) {
         os << "printing string ";
         os << stringVal->getVal();
         return os;
-    } else if (auto canvasVal = dynamic_cast<const CanvasIMGData*>(data)) {
-        os << "printing canvas ";
-        os << canvasVal->getVal();
-        return os;
     } else if (auto vectorVal = dynamic_cast<const VectorIMGData*>(data)) {
         os << "printing vector ";
         os << vectorVal->getVal();
+        return os;
+    } else if (auto convexVal = dynamic_cast<const ConvexIMGData*>(data)) {
+        os << "printing convex ";
+        os << convexVal->getVal();
+        return os;
+    } else if (auto canvasVal = dynamic_cast<const CanvasIMGData*>(data)) {
+        os << "printing canvas ";
+        os << canvasVal->getVal();
         return os;
     } else if (auto uolVal = dynamic_cast<const UOLIMGData*>(data)) {
         os << "printing uol ";

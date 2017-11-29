@@ -113,6 +113,18 @@ class VectorIMGData : public IMGData {
         std::pair<int32_t, int32_t> val;
 };
 
+class ConvexIMGData : public IMGData {
+    public:
+        ConvexIMGData(const std::pair<int32_t, int32_t>& val) : val(val) {}
+        //StringIMGData(const std::string& val) : IMGData(IMGDataType::STRING), val(val) {}
+        ~ConvexIMGData() {}
+
+        const std::pair<int32_t, int32_t>& getVal() const;
+
+    private:
+        std::pair<int32_t, int32_t> val;
+};
+
 class CanvasIMGData : public IMGData {
     public:
         CanvasIMGData(const std::vector<uint8_t>& val) : val(val) {}

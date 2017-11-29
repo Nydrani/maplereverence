@@ -97,7 +97,7 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
 
         // parse num entries
         int32_t numEntries = accessor.readCompressedInt();
-        std::cout << "Num Entries: " << numEntries << '\n';
+        std::cout << "(PROPERTY) Num Entries: " << numEntries << '\n';
         for (int i = 0; i < numEntries; ++i) {
             auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
             parseIMGEntry(newEntry.get());
@@ -119,7 +119,7 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
 
             // parse num entries
             int32_t numEntries = accessor.readCompressedInt();
-            std::cout << "Num Entries: " << numEntries << '\n';
+            std::cout << "(CANVAS) Num Entries: " << numEntries << '\n';
             for (int i = 0; i < numEntries; ++i) {
                 auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
                 parseIMGEntry(newEntry.get());
@@ -159,6 +159,18 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
         std::pair<int32_t, int32_t> point(x, y);
 
         entry->setValue(std::unique_ptr<VectorIMGData>(new VectorIMGData(point)));
+    } else if (entryType == "Shape2D#Convex2D") {
+        entry->setType(IMGDataType::CONVEX);
+
+        // parse num entries
+        int32_t numEntries = accessor.readCompressedInt();
+        std::cout << "(CONVEX) Num Entries: " << numEntries << '\n';
+        for (int i = 0; i < numEntries; ++i) {
+            auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
+            parseIMGEntryExtended(newEntry.get());
+            entry->addEntry(std::move(newEntry));
+        }
+        //entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
     } else if (entryType == "UOL") {
         entry->setType(IMGDataType::UOL);
 
