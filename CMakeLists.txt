@@ -18,8 +18,10 @@ add_library (WZTool wztool.cpp)
 add_library (MapleAccessor mapleaccessor.cpp)
 add_library (WZFile wzfile.cpp)
 add_library (IMGFile imgfile.cpp)
+add_library (MapleData mapledata.cpp)
 
 target_link_libraries (MapleAccessor WZTool)
+target_link_libraries (IMGFile MapleData)
 
 
 add_executable (WZExtractor wzextractor.cpp)

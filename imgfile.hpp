@@ -2,8 +2,6 @@
 #include <memory>
 #include <vector>
 
-#include <boost/variant.hpp>
-
 #include "mapleaccessor.hpp"
 #include "mapledata.hpp"
 
@@ -14,35 +12,25 @@
 class IMGEntry {
     public:
         IMGEntry() {}
-        virtual ~IMGEntry() {}
+        ~IMGEntry() {}
 
         void setName(const std::string&);
         const std::string& getName() const;
         void setType(IMGDataType type);
         IMGDataType getType() const;
+        void setValue(std::unique_ptr<IMGData>);
+        IMGData* getValue() const;
 
-        virtual void addEntry(std::unique_ptr<IMGEntry>);
+        void addEntry(std::unique_ptr<IMGEntry>);
         const std::vector<std::unique_ptr<IMGEntry>>& getEntries() const;
 
-        virtual void print() const;
+        void print() const;
 
     private:
         std::string name;
         IMGDataType type;
-        std::vector<std::unique_ptr<IMGEntry>> entries;
-};
-
-class IMGValue: public IMGEntry {
-    public:
-        IMGValue() {}
-        ~IMGValue() {}
-
-        void setValue(std::unique_ptr<IMGData>);
-        IMGData* getValue() const;
-        void print() const;
-
-    private:
         std::unique_ptr<IMGData> value;
+        std::vector<std::unique_ptr<IMGEntry>> entries;
 };
 
 
@@ -70,8 +58,8 @@ class IMGFile {
     private:
         bool sanityCheck();
         void buildIMGStructure(IMGEntry*);
+        void parseIMGEntryExtended(IMGEntry*);
         void parseIMGEntry(IMGEntry*);
-        void parseIMGValue(IMGValue*);
 
         const std::string name;
         MapleAccessor accessor;

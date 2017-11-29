@@ -1,5 +1,6 @@
 #include <memory>
 #include <vector>
+#include <utility>
 
 
 #ifndef MAPLEREVERENCE_MAPLEDATA
@@ -32,6 +33,12 @@ class IMGData {
 
     private:
         // IMGDataType type;
+};
+
+class NoneIMGData : public IMGData {
+    public:
+        NoneIMGData() {}
+        ~NoneIMGData() {}
 };
 
 class ShortIMGData : public IMGData {
@@ -94,6 +101,18 @@ class StringIMGData : public IMGData {
         std::string val;
 };
 
+class VectorIMGData : public IMGData {
+    public:
+        VectorIMGData(const std::pair<int32_t, int32_t>& val) : val(val) {}
+        //StringIMGData(const std::string& val) : IMGData(IMGDataType::STRING), val(val) {}
+        ~VectorIMGData() {}
+
+        const std::pair<int32_t, int32_t>& getVal() const;
+
+    private:
+        std::pair<int32_t, int32_t> val;
+};
+
 class CanvasIMGData : public IMGData {
     public:
         CanvasIMGData(const std::vector<uint8_t>& val) : val(val) {}
@@ -106,7 +125,21 @@ class CanvasIMGData : public IMGData {
         std::vector<uint8_t> val;
 };
 
+class UOLIMGData : public IMGData {
+    public:
+        UOLIMGData(const std::string& val) : val(val) {}
+        //UOLIMGData(const std::string& val) : IMGData(IMGDataType::STRING), val(val) {}
+        ~UOLIMGData() {}
+
+        const std::string& getVal() const;
+
+    private:
+        std::string val;
+};
+
 // output operator
-// std::ostream& operator<<(std::ostream&, const IMGData&);
+std::ostream& operator<<(std::ostream&, const std::vector<uint8_t>&);
+std::ostream& operator<<(std::ostream&, const std::pair<int32_t, int32_t>&);
+std::ostream& operator<<(std::ostream&, IMGData*);
 
 #endif

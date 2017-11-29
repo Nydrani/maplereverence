@@ -1,12 +1,9 @@
+#include <memory>
 #include <iostream>
-#include <string>
+#include <vector>
+
 #include "mapledata.hpp"
 
-/*
-IMGDataType IMGData::getType() const {
-    return type;
-}
-*/
 
 int16_t ShortIMGData::getVal() const {
     return val;
@@ -28,23 +25,77 @@ const std::string& StringIMGData::getVal() const {
     return val;
 }
 
+const std::vector<uint8_t>& CanvasIMGData::getVal() const {
+    return val;
+}
 
-/*
-std::ostream& operator<<(std::ostream& os, const IMGData& data) {
-    if (data.getType() == IMGDataType::SHORT) {
-        auto shortVal = static_cast<const ShortIMGData&>(data);
-        os << shortVal.getVal();
-    } else if (data.getType() == IMGDataType::INT) {
-        auto intVal = static_cast<const IntIMGData&>(data);
-        os << intVal.getVal();
-    } else if (data.getType() == IMGDataType::FLOAT) {
-        auto floatVal = static_cast<const FloatIMGData&>(data);
-        os << floatVal.getVal();
-    } else if (data.getType() == IMGDataType::DOUBLE) {
-        auto doubleVal = static_cast<const DoubleIMGData&>(data);
-        os << doubleVal.getVal();
+const std::pair<int32_t, int32_t>& VectorIMGData::getVal() const {
+    return val;
+}
+
+const std::string& UOLIMGData::getVal() const {
+    return val;
+}
+
+
+std::ostream& operator<<(std::ostream& os, const std::vector<uint8_t>& data) {
+    os << "not printing raw data2 ";
+    (void)data;
+    /*
+    for (const auto& val : data) {
+        os << unsigned(val);
+    }
+    */
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::pair<int32_t, int32_t>& data) {
+    os << "printing vector2 ";
+    os << data.first;
+    os << " ";
+    os << data.second;
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, IMGData* data) {
+    if (dynamic_cast<const NoneIMGData*>(data)) {
+        os << "printing none";
+        return os;
+    } else if (auto shortVal = dynamic_cast<const ShortIMGData*>(data)) {
+        os << "printing short ";
+        os << shortVal->getVal();
+        return os;
+    } else if (auto intVal = dynamic_cast<const IntIMGData*>(data)) {
+        os << "printing int ";
+        os << intVal->getVal();
+        return os;
+    } else if (auto floatVal = dynamic_cast<const FloatIMGData*>(data)) {
+        os << "printing float ";
+        os << floatVal->getVal();
+        return os;
+    } else if (auto doubleVal = dynamic_cast<const DoubleIMGData*>(data)) {
+        os << "printing double ";
+        os << doubleVal->getVal();
+        return os;
+    } else if (auto stringVal = dynamic_cast<const StringIMGData*>(data)) {
+        os << "printing string ";
+        os << stringVal->getVal();
+        return os;
+    } else if (auto canvasVal = dynamic_cast<const CanvasIMGData*>(data)) {
+        os << "printing canvas ";
+        os << canvasVal->getVal();
+        return os;
+    } else if (auto vectorVal = dynamic_cast<const VectorIMGData*>(data)) {
+        os << "printing vector ";
+        os << vectorVal->getVal();
+        return os;
+    } else if (auto uolVal = dynamic_cast<const UOLIMGData*>(data)) {
+        os << "printing uol ";
+        os << uolVal->getVal();
+        return os;
+    } else {
+        os << "printing unknown\n";
     }
 
     return os;
 }
-*/

@@ -1,7 +1,7 @@
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <memory>
+#include <utility>
 
 #include "wztool.hpp"
 #include "imgfile.hpp"
@@ -34,25 +34,18 @@ IMGEntry::getEntries() const {
 }
 
 void IMGEntry::print() const {
-    std::cout << name << '\n';
-    std::cout << "Num children: " << entries.size() << '\n';
+    std::cout << name << " | " << value.get() << '\n';
     for (auto& entry : entries) {
         entry->print();
     }
 }
 
-
-void IMGValue::setValue(std::unique_ptr<IMGData> value) {
+void IMGEntry::setValue(std::unique_ptr<IMGData> value) {
     this->value = std::move(value);
 }
 
-IMGData* IMGValue::getValue() const {
+IMGData* IMGEntry::getValue() const {
     return value.get();
-}
-
-void IMGValue::print() const {
-    std::cout << value.get();
-    IMGEntry::print();
 }
 
 
@@ -78,10 +71,12 @@ bool IMGFile::sanityCheck() {
 }
 
 void IMGFile::buildIMGStructure(IMGEntry* root) {
-    parseIMGEntry(root);
+    parseIMGEntryExtended(root);
 }
 
-void IMGFile::parseIMGEntry(IMGEntry* entry) {
+void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
+    std::cout << "Extended: " << accessor.tell() << '\n';
+
     std::string entryType = maplereverence::detectString(
             maplereverence::imgEntryStringByte,
             maplereverence::imgEntryLinkByte, accessor);
@@ -99,11 +94,12 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
         int32_t numEntries = accessor.readCompressedInt();
         std::cout << "Num Entries: " << numEntries << '\n';
         for (int i = 0; i < numEntries; ++i) {
-            auto entry = std::unique_ptr<IMGValue>(new IMGValue());
-            parseIMGValue(entry.get());
-            entry->addEntry(std::move(entry));
+            auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
+            parseIMGEntry(newEntry.get());
+            entry->addEntry(std::move(newEntry));
         }
 
+        entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
     } else if (entryType == "Canvas") {
         entry->setType(IMGDataType::CANVAS);
 
@@ -120,26 +116,28 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
             int32_t numEntries = accessor.readCompressedInt();
             std::cout << "Num Entries: " << numEntries << '\n';
             for (int i = 0; i < numEntries; ++i) {
-                auto entry = std::unique_ptr<IMGValue>(new IMGValue());
-                parseIMGValue(entry.get());
-                entry->addEntry(std::move(entry));
+                auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
+                parseIMGEntry(newEntry.get());
+                entry->addEntry(std::move(newEntry));
             }
         } else {
-            std::string exception("(CANVAS) Invalid string parse method: ");
+            std::string exception("(CANVAS) Invalid entry parse method: ");
             exception += std::to_string(canvasFlag);
             throw std::runtime_error(exception);
         }
 
-        // 8 bytes
+        // @TODO seems to be some stuff
+        // x, y?
         accessor.readCompressedInt();
         accessor.readCompressedInt();
         accessor.readCompressedInt();
         accessor.readByte();
+
+        // @TODO padding?
         accessor.readInt();
 
         // data length
         uint32_t dataLength = accessor.readUnsignedInt();
-        std::cout << dataLength << '\n';
 
         // padding
         accessor.readByte();
@@ -147,17 +145,15 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
         // read data
         std::vector<uint8_t> data = accessor.readData(dataLength);
 
-        std::cout << accessor.tell() << '\n';
-
-        // @TODO store canvas data in value
-        // entry->setValue(data);
+        entry->setValue(std::unique_ptr<CanvasIMGData>(new CanvasIMGData(data)));
     } else if (entryType == "Shape2D#Vector2D") {
         entry->setType(IMGDataType::VECTOR);
+
         int32_t x = accessor.readCompressedInt();
         int32_t y = accessor.readCompressedInt();
-        (void)x;
-        (void)y;
-        // @TODO unused x, y for now, make a point imgdata
+        std::pair<int32_t, int32_t> point(x, y);
+
+        entry->setValue(std::unique_ptr<VectorIMGData>(new VectorIMGData(point)));
     } else if (entryType == "UOL") {
         entry->setType(IMGDataType::UOL);
 
@@ -166,8 +162,10 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
 
         // read and store string
         auto string = maplereverence::detectString(0x00, 0x01, accessor);
+
+        entry->setValue(std::unique_ptr<UOLIMGData>(new UOLIMGData(string)));
     } else {
-        std::string exception("Unsupported entry type: ");
+        std::string exception("Unsupported extended entry type: ");
         exception += entryType;
         exception += " at offset: ";
         exception += std::to_string(accessor.tell());
@@ -175,47 +173,51 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
     }
 }
 
-void IMGFile::parseIMGValue(IMGValue* value) {
+void IMGFile::parseIMGEntry(IMGEntry* entry) {
+    std::cout << "Entry: " << accessor.tell() << '\n';
     auto name = maplereverence::detectString(0x00, 0x01, accessor);
 
-    // update value name
-    value->setName(name);
+    // update entry name
+    entry->setName(name);
 
     uint8_t typeFlag = accessor.readUnsignedByte();
     if (typeFlag == 0x00) {
-        value->setType(IMGDataType::NONE);
+        entry->setType(IMGDataType::NONE);
+
+        entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
     } else if (typeFlag == 0x02) {
-        value->setType(IMGDataType::SHORT);
+        entry->setType(IMGDataType::SHORT);
 
         int16_t data = accessor.readShort();
-        value->setValue(std::unique_ptr<ShortIMGData>(new ShortIMGData(data)));
+        entry->setValue(std::unique_ptr<ShortIMGData>(new ShortIMGData(data)));
     } else if (typeFlag == 0x03) {
-        value->setType(IMGDataType::INT);
+        entry->setType(IMGDataType::INT);
 
         int32_t data = accessor.readCompressedInt();
-        value->setValue(std::unique_ptr<IntIMGData>(new IntIMGData(data)));
+        entry->setValue(std::unique_ptr<IntIMGData>(new IntIMGData(data)));
     } else if (typeFlag == 0x04) {
-        value->setType(IMGDataType::FLOAT);
+        entry->setType(IMGDataType::FLOAT);
 
         float data = accessor.readCompressedFloat();
-        value->setValue(std::unique_ptr<FloatIMGData>(new FloatIMGData(data)));
+        entry->setValue(std::unique_ptr<FloatIMGData>(new FloatIMGData(data)));
     } else if (typeFlag == 0x08) {
-        value->setType(IMGDataType::STRING);
+        entry->setType(IMGDataType::STRING);
 
         auto data = maplereverence::detectString(0x00, 0x01, accessor);
-        value->setValue(std::unique_ptr<StringIMGData>(new StringIMGData(data)));
+        entry->setValue(std::unique_ptr<StringIMGData>(new StringIMGData(data)));
     } else if (typeFlag == 0x09) {
-        value->setType(IMGDataType::EXTENDED);
+        entry->setType(IMGDataType::EXTENDED);
 
         uint32_t byteSize = accessor.readUnsignedInt();
         // bytesize unused for now
         (void)byteSize;
 
-        auto entry = std::unique_ptr<IMGEntry>(new IMGEntry());
-        parseIMGEntry(entry.get());
-        value->addEntry(std::move(entry));
+        auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
+        parseIMGEntryExtended(newEntry.get());
+        entry->addEntry(std::move(newEntry));
+        entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
     } else {
-        std::string exception("Unsupported data type flag: ");
+        std::string exception("Unsupported entry type flag: ");
         exception += std::to_string(typeFlag);
         exception += " at offset: ";
         exception += std::to_string(accessor.tell());
