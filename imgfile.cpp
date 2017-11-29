@@ -172,6 +172,38 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
         }
 
         entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
+    } else if (entryType == "Sound_DX8") {
+        entry->setType(IMGDataType::SOUND);
+
+        // padding
+        accessor.readByte();
+
+        // length of sound in bytes
+        uint32_t dataLength = accessor.readCompressedInt();
+
+        // length of sound in ms
+        // @TODO do nothing to sound ms for now
+        uint32_t soundMs = accessor.readCompressedInt();
+        (void)soundMs;
+
+        // guid header apparently is always the same?
+        auto curPos = accessor.tell();
+        accessor.seek(51, std::ios::cur);
+
+        // next byte is the wav header length apparently
+        uint8_t wavHeaderLength = accessor.readUnsignedByte();
+
+        // go back and read header
+        // @TODO do nothing to header for now
+        accessor.seek(curPos);
+        std::vector<uint8_t> header = accessor.readData(wavHeaderLength + 53);
+
+        // read sound data
+        // @TODO seems i need to read + 1 for some stupid reason
+        // because it reads the current byte and misses the last byte because of that
+        std::vector<uint8_t> data = accessor.readData(dataLength + 1);
+
+        entry->setValue(std::unique_ptr<SoundIMGData>(new SoundIMGData(header, data)));
     } else if (entryType == "UOL") {
         entry->setType(IMGDataType::UOL);
 

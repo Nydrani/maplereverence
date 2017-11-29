@@ -3,6 +3,7 @@
 #include "constants.hpp"
 #include "wztool.hpp"
 
+
 namespace maplereverence {
     std::string xorStringAscii(const std::string& enc) {
         std::string clone = enc;
@@ -16,13 +17,18 @@ namespace maplereverence {
         return clone;
     }
 
-    std::string xorStringUnicode(const std::string& enc) {
-        std::string clone = enc;
+    std::u16string xorStringUnicode(const std::u16string& enc) {
+        std::u16string clone = enc;
         int length = enc.length();
 
         for (int i = 0; i < length; ++i) {
             int keyPos = i % maplereverence::encryptionKeyUnicodeLength;
-            clone.at(i) ^= maplereverence::encryptionKeyUnicode[keyPos];
+
+            // create 2 bit mask
+            uint16_t mask = maplereverence::encryptionKeyAscii[keyPos * 2];
+            mask += maplereverence::encryptionKeyAscii[(keyPos * 2) + 1] << 8;
+
+            clone.at(i) ^= mask;
         }
 
         return clone;

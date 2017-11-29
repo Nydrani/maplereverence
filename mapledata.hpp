@@ -137,6 +137,21 @@ class CanvasIMGData : public IMGData {
         std::vector<uint8_t> val;
 };
 
+class SoundIMGData : public IMGData {
+    public:
+        SoundIMGData(const std::vector<uint8_t>& header,
+                const std::vector<uint8_t>& data)
+            : header(header), data(data) {}
+        ~SoundIMGData() {}
+
+        const std::vector<uint8_t>& getHeader() const;
+        const std::vector<uint8_t>& getData() const;
+
+    private:
+        std::vector<uint8_t> header;
+        std::vector<uint8_t> data;
+};
+
 class UOLIMGData : public IMGData {
     public:
         UOLIMGData(const std::string& val) : val(val) {}

@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <codecvt>
+#include <locale>
 
 #include "wztool.hpp"
 #include "mapleaccessor.hpp"
@@ -132,6 +134,7 @@ std::string MapleAccessor::readEncryptedString() {
     if (flag > 0) {
         // @TODO remove when done
         std::cout << "~~~~~~DECRYPTING UNICODE~~~~~\n";
+        std::cout << tell() << '\n';
 
         uint16_t mask = 0xAAAA;
         // maximum number (127) (flag for compression)
@@ -146,14 +149,19 @@ std::string MapleAccessor::readEncryptedString() {
             throw std::invalid_argument(string);
         }
 
-        string = readString(strLength);
+        std::u16string unicodeString;
         // decrypt string
         for (int i = 0; i < strLength; ++i) {
-            string.at(i) ^= mask;
+            uint16_t encryptedChar = readUnsignedShort();
+            encryptedChar ^= mask;
             ++mask;
+            unicodeString += encryptedChar;
         }
-        //string = maplereverence::xorStringUnicode(string);
-        string = maplereverence::xorStringAscii(string);
+        unicodeString = maplereverence::xorStringUnicode(unicodeString);
+        
+        // convert to normal string --> this is aids as fk because cpp sucks
+        std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> cv;
+        string = cv.to_bytes(unicodeString);
 
         std::cout << string << ' ' << stream.tellg() << '\n';
     }
@@ -204,7 +212,7 @@ std::vector<uint8_t> MapleAccessor::readData(uint32_t length) {
 
     // extract data
     std::copy_n(std::istreambuf_iterator<char>(stream),
-            length, data.begin());
+            length, std::back_inserter(data));
 
     return data;
 }

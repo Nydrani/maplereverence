@@ -37,6 +37,14 @@ const std::vector<uint8_t>& CanvasIMGData::getVal() const {
     return val;
 }
 
+const std::vector<uint8_t>& SoundIMGData::getHeader() const {
+    return header;
+}
+
+const std::vector<uint8_t>& SoundIMGData::getData() const {
+    return data;
+}
+
 const std::string& UOLIMGData::getVal() const {
     return val;
 }
@@ -96,6 +104,11 @@ std::ostream& operator<<(std::ostream& os, IMGData* data) {
     } else if (auto canvasVal = dynamic_cast<const CanvasIMGData*>(data)) {
         os << "printing canvas ";
         os << canvasVal->getVal();
+        return os;
+    } else if (auto soundVal = dynamic_cast<const SoundIMGData*>(data)) {
+        os << "printing sound ";
+        os << soundVal->getHeader();
+        os << soundVal->getData();
         return os;
     } else if (auto uolVal = dynamic_cast<const UOLIMGData*>(data)) {
         os << "printing uol ";
