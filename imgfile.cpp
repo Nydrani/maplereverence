@@ -113,7 +113,9 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
 
         uint8_t canvasFlag = accessor.readUnsignedByte();
         std::string string;
-        if (canvasFlag == 0x01) {
+        if (canvasFlag == 0x00) {
+            // do nothing
+        } else if (canvasFlag == 0x01) {
             // padding?
             accessor.readShort();
 
@@ -250,6 +252,11 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
 
         float data = accessor.readCompressedFloat();
         entry->setValue(std::unique_ptr<FloatIMGData>(new FloatIMGData(data)));
+    } else if (typeFlag == 0x05) {
+        entry->setType(IMGDataType::DOUBLE);
+
+        double data = accessor.readDouble();
+        entry->setValue(std::unique_ptr<DoubleIMGData>(new DoubleIMGData(data)));
     } else if (typeFlag == 0x08) {
         entry->setType(IMGDataType::STRING);
 

@@ -21,11 +21,11 @@ class MapleAccessor {
         int64_t readLong();
         uint64_t readUnsignedLong();
         float readFloat();
+        double readDouble();
         std::string readString();
         std::string readString(int length);
         int32_t readCompressedInt();
         float readCompressedFloat();
-        double readCompressedDouble();
         std::string readEncryptedString();
         std::string readEncryptedString(uint32_t offset);
         std::vector<uint8_t> readData(uint32_t length);

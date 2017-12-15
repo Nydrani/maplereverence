@@ -81,6 +81,14 @@ float MapleAccessor::readFloat() {
     return f;
 }
 
+double MapleAccessor::readDouble() {
+    //std::cout << "CurPos<<: " << stream.tellg() << '\n';
+
+    double d;
+    stream.read(reinterpret_cast<char *>(&d), sizeof(d));
+    return d;
+}
+
 std::string MapleAccessor::readString() {
     //std::cout << "CurPos<<: " << stream.tellg() << '\n';
 
