@@ -1,10 +1,9 @@
+#pragma once
+
 #include <iostream>
 #include <fstream>
 #include <vector>
 
-
-#ifndef MAPLEREVERENCE_MAPLEACCESSOR
-#define MAPLEREVERENCE_MAPLEACCESSOR
 
 class MapleAccessor {
     public:
@@ -39,4 +38,3 @@ class MapleAccessor {
         std::ifstream stream;
 };
 
-#endif

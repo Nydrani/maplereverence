@@ -10,61 +10,47 @@
 #include "imgfile.hpp"
 #include "constants.hpp"
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE_PARAM 1
-#define EXIT_FAILURE_NONEXISTENT_FOLDER 2
-
 
 int main(int argc, char* argv[]) {
     // exit if incorrect num of parameters
     if (argc != 2) {
-        std::cout << "Usage: ./IMGExtractor <IMGFolderPath>\n";
+        std::cout << "Usage: ./IMGExtractor <IMGFilePath>\n";
         std::cout << "Example: ./IMGExtractor maplestory\n";
         return EXIT_FAILURE_PARAM;
     }
 
-    const char* imgFolder = argv[1];
-    std::map<std::string, std::unique_ptr<IMGFile>> files; 
+    const char* imgFileName = argv[1];
 
-    // exit if nonexistent folder
-    if (!boost::filesystem::is_directory(imgFolder)) {
-        std::cout << "Usage: ./IMGExtractor <IMGFolderPath>\n";
-        std::cout << "Error: Folder '" << imgFolder << "' does not exist\n";
-        return EXIT_FAILURE_NONEXISTENT_FOLDER;
+    // exit if nonexistent file
+    if (!boost::filesystem::is_regular_file(imgFileName)) {
+        std::cout << "Usage: ./IMGExtractor <IMGFilePath>\n";
+        std::cout << "Error: File '" << imgFileName << "' does not exist\n";
+        return EXIT_FAILURE_NONEXISTENT_FILE;
     }
 
     // store cwd and traverse to wz directory
     auto curPath = boost::filesystem::current_path();
-    chdir(imgFolder);
+    auto filePath = boost::filesystem::path(imgFileName);
+    chdir(filePath.parent_path().c_str());
 
-    // populate map with wz files from folder
-    boost::filesystem::directory_iterator imgIt(".");
-    boost::filesystem::directory_iterator endIt;
-    for (; imgIt != endIt; ++imgIt) {
-        const boost::filesystem::path filePath(imgIt->path().filename());
-
-        // skip non img files
-        if (filePath.extension() != maplereverence::imgExtension) {
-            continue;
-        }
-        
-        std::cout << filePath << '\n';
-        files.emplace(filePath.string(), std::unique_ptr<IMGFile>(
-                    new IMGFile(filePath.string())));
-    }
+    // load file
+    std::cout << filePath.filename() << '\n';
+    IMGFile imgFile(filePath.filename().string());
 
     // restore back to original path
     chdir(curPath.c_str());
 
     // create directory, traverse and extract
-    //boost::filesystem::create_directory(maplereverence::imgExtractPath);
-    //chdir(maplereverence::imgExtractPath.c_str());
+    boost::filesystem::create_directory(maplereverence::imgExtractPath);
+    chdir(maplereverence::imgExtractPath.c_str());
 
-    for (const auto& file : files) {
-        std::cout << "===== " << file.second->getName() << " =====\n";
-        file.second->print();
-        std::cout << std::endl;;
-    }
+    // print output
+    std::cout << "===== " << imgFile.getName() << " =====\n";
+    imgFile.print();
+    std::cout << "Extracting: " << imgFile.getName();
+    std::cout << std::endl;;
+    imgFile.extract();
+    std::cout << std::endl;;
 
     return EXIT_SUCCESS;
 }

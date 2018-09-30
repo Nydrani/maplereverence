@@ -10,10 +10,6 @@
 #include "wzfile.hpp"
 #include "constants.hpp"
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE_PARAM 1
-#define EXIT_FAILURE_NONEXISTENT_FOLDER 2
-
 
 int main(int argc, char* argv[]) {
     // exit if incorrect num of parameters

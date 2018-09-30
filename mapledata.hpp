@@ -1,10 +1,9 @@
+#pragma once
+
 #include <memory>
 #include <vector>
 #include <utility>
 
-
-#ifndef MAPLEREVERENCE_MAPLEDATA
-#define MAPLEREVERENCE_MAPLEDATA
 
 enum class IMGDataType : uint8_t {
     NONE,
@@ -169,4 +168,3 @@ std::ostream& operator<<(std::ostream&, const std::vector<uint8_t>&);
 std::ostream& operator<<(std::ostream&, const std::pair<int32_t, int32_t>&);
 std::ostream& operator<<(std::ostream&, IMGData*);
 
-#endif

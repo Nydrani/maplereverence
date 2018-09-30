@@ -1,13 +1,15 @@
+#pragma once
+
 #include <string>
 #include <memory>
 #include <vector>
 
+
 #include "mapleaccessor.hpp"
 #include "mapledata.hpp"
 
+#include "nlohmann/json.hpp"
 
-#ifndef MAPLEREVERENCE_IMGFILE
-#define MAPLEREVERENCE_IMGFILE
 
 class IMGEntry {
     public:
@@ -24,6 +26,7 @@ class IMGEntry {
         void addEntry(std::unique_ptr<IMGEntry>);
         const std::vector<std::unique_ptr<IMGEntry>>& getEntries() const;
 
+        void extract(nlohmann::json&);
         void print() const;
 
     private:
@@ -46,6 +49,7 @@ class IMGFile {
             accessor.seek(curPos);
 
             root = std::unique_ptr<IMGEntry>(new IMGEntry());
+            root->setName(name);
 
             buildIMGStructure(root.get());
         }
@@ -53,6 +57,7 @@ class IMGFile {
 
         const std::string& getName() const;
 
+        void extract();
         void print() const;
 
     private:
@@ -67,5 +72,3 @@ class IMGFile {
         std::unique_ptr<IMGEntry> root;
 };
 
-
-#endif

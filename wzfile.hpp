@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -5,8 +7,6 @@
 
 #include "mapleaccessor.hpp"
 
-#ifndef MAPLEREVERENCE_WZFILE
-#define MAPLEREVERENCE_WZFILE
 
 class MapleEntry {
     public:
@@ -111,4 +111,3 @@ class ListWZFile {
         const std::string name;
 };
 
-#endif

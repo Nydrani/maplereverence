@@ -1,10 +1,15 @@
+#pragma once
+
 #include <string>
 
 #include <boost/filesystem.hpp>
 
 
-#ifndef MAPLEREVERENCE_CONSTANTS
-#define MAPLEREVERENCE_CONSTANTS
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE_PARAM 1
+#define EXIT_FAILURE_NONEXISTENT_FOLDER 2
+#define EXIT_FAILURE_NONEXISTENT_FILE 3
+
 
 namespace maplereverence {
     const std::string listWZName("List.wz");
@@ -80,4 +85,3 @@ namespace maplereverence {
         0x7B, 0x8A, 0x30, 0xA0, 0x59, 0x34, 0xC3};
 }
 
-#endif

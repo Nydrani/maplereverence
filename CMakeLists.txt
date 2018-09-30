@@ -11,8 +11,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic")
 
+
 # link boost libraries
 find_package(Boost COMPONENTS system filesystem REQUIRED)
+#find_package(nlohmann_json REQUIRED)
 
 add_library (WZTool wztool.cpp)
 add_library (MapleAccessor mapleaccessor.cpp)
@@ -20,6 +22,7 @@ add_library (WZFile wzfile.cpp)
 add_library (IMGFile imgfile.cpp)
 add_library (MapleData mapledata.cpp)
 
+# link third party library shit (only to img file atm)
 target_link_libraries (MapleAccessor WZTool)
 target_link_libraries (IMGFile MapleData)
 
@@ -33,10 +36,13 @@ target_link_libraries (WZExtractor MapleAccessor)
 target_link_libraries (WZExtractor ${Boost_FILESYSTEM_LIBRARY})
 target_link_libraries (WZExtractor ${Boost_SYSTEM_LIBRARY})
 
+
 target_link_libraries (IMGExtractor IMGFile)
 target_link_libraries (IMGExtractor WZTool)
 target_link_libraries (IMGExtractor MapleAccessor)
 target_link_libraries (IMGExtractor ${Boost_FILESYSTEM_LIBRARY})
 target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
+target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
+#target_link_libraries (IMGExtractor nlohmann_json::nlohmann_json)
 
 install (TARGETS WZExtractor IMGExtractor DESTINATION bin)

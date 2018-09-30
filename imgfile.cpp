@@ -3,9 +3,15 @@
 #include <memory>
 #include <utility>
 
+
 #include "wztool.hpp"
 #include "imgfile.hpp"
 #include "constants.hpp"
+
+#include "nlohmann/json.hpp"
+
+// fuck it
+using json = nlohmann::json;
 
 
 void IMGEntry::setName(const std::string& name) {
@@ -23,6 +29,15 @@ void IMGEntry::setType(const IMGDataType type) {
 IMGDataType IMGEntry::getType() const {
     return type;
 }
+
+void IMGEntry::setValue(std::unique_ptr<IMGData> value) {
+    this->value = std::move(value);
+}
+
+IMGData* IMGEntry::getValue() const {
+    return value.get();
+}
+
 
 void IMGEntry::addEntry(std::unique_ptr<IMGEntry> entry) {
     entries.emplace_back(std::move(entry));
@@ -45,17 +60,34 @@ void IMGEntry::print() const {
     }
 }
 
-void IMGEntry::setValue(std::unique_ptr<IMGData> value) {
-    this->value = std::move(value);
-}
-
-IMGData* IMGEntry::getValue() const {
-    return value.get();
-}
-
 
 const std::string& IMGFile::getName() const {
     return name;
+}
+
+void IMGEntry::extract(json& obj) {
+    if (type == IMGDataType::PROPERTY) {
+        obj.emplace(name, json::object());
+        for (auto& entry : entries) {
+            entry->extract(obj.at(name));
+        }
+    } else if (type == IMGDataType::INT) {
+        auto intVal = dynamic_cast<const IntIMGData*>(getValue());
+        obj.emplace(name, intVal->getVal());
+    } else {
+        // find generic function for this kind of call
+        // obj.emplace(name, value->getVal());
+    }
+}
+
+void IMGFile::extract() {
+    json obj = json::object();
+    root->extract(obj);
+    // none type = (folderlike)
+    // other type = value
+
+    // print at name location
+    std::cout << obj.dump(2) << '\n';
 }
 
 void IMGFile::print() const {
@@ -64,11 +96,13 @@ void IMGFile::print() const {
 
 bool IMGFile::sanityCheck() {
     if (!accessor.is_open()) {
+        std::cout << "File not open!" << std::endl;
         return false;
     }
 
     char firstByte = accessor.readByte();
     if (firstByte != maplereverence::imgEntryStringByte) {
+        std::cout << "File not IMG file!" << std::endl;
         return false;
     }
 
@@ -87,7 +121,7 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
             maplereverence::imgEntryLinkByte, accessor);
 
     // update entry name 
-    entry->setName(entryType);
+    // entry->setName(entryType);
 
     if (entryType == "Property") {
         entry->setType(IMGDataType::PROPERTY);
@@ -263,16 +297,12 @@ void IMGFile::parseIMGEntry(IMGEntry* entry) {
         auto data = maplereverence::detectString(0x00, 0x01, accessor);
         entry->setValue(std::unique_ptr<StringIMGData>(new StringIMGData(data)));
     } else if (typeFlag == 0x09) {
-        entry->setType(IMGDataType::EXTENDED);
-
         uint32_t byteSize = accessor.readUnsignedInt();
         // bytesize unused for now
         (void)byteSize;
 
-        auto newEntry = std::unique_ptr<IMGEntry>(new IMGEntry());
-        parseIMGEntryExtended(newEntry.get());
-        entry->addEntry(std::move(newEntry));
-        entry->setValue(std::unique_ptr<NoneIMGData>(new NoneIMGData()));
+        // check extended format (folder/other stuff)
+        parseIMGEntryExtended(entry);
     } else {
         std::string exception("Unsupported entry type flag: ");
         exception += std::to_string(typeFlag);
