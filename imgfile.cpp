@@ -3,7 +3,6 @@
 #include <memory>
 #include <utility>
 
-
 #include "wztool.hpp"
 #include "imgfile.hpp"
 #include "constants.hpp"
@@ -66,25 +65,74 @@ const std::string& IMGFile::getName() const {
 }
 
 void IMGEntry::extract(json& obj) {
-    if (type == IMGDataType::PROPERTY) {
+    if (type == IMGDataType::NONE) {
+        // do something? or nothing?
+    } else if (type == IMGDataType::SHORT) {
+        auto castedVal = static_cast<const ShortIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::INT) {
+        auto castedVal = static_cast<const IntIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::FLOAT) {
+        auto castedVal = static_cast<const FloatIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::DOUBLE) {
+        auto castedVal = static_cast<const DoubleIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::STRING) {
+        auto castedVal = static_cast<const StringIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::PROPERTY) {
         obj.emplace(name, json::object());
         for (auto& entry : entries) {
             entry->extract(obj.at(name));
         }
-    } else if (type == IMGDataType::INT) {
-        auto intVal = dynamic_cast<const IntIMGData*>(getValue());
-        obj.emplace(name, intVal->getVal());
+    } else if (type == IMGDataType::CANVAS) {
+        json canvasObj = json::object();
+
+        // @TODO remove raw data for now
+        // auto castedVal = static_cast<const CanvasIMGData*>(getValue());
+        // canvasObj.emplace("CANVAS_DATA", castedVal->getVal());
+        canvasObj.emplace("CANVAS_DATA", nullptr);
+
+        for (auto& entry : entries) {
+            entry->extract(canvasObj);
+        }
+
+        obj.emplace(name, canvasObj);
+    } else if (type == IMGDataType::VECTOR) {
+        auto castedVal = static_cast<const VectorIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
+    } else if (type == IMGDataType::CONVEX) {
+        obj.emplace(name, json::object());
+        for (auto& entry : entries) {
+            entry->extract(obj.at(name));
+        }
+    } else if (type == IMGDataType::SOUND) {
+        json soundObj = json::object();
+
+        // @TODO remove raw data for now
+        // auto castedVal = static_cast<const SoundIMGData*>(getValue());
+        // soundObj.emplace("header", castedVal->getHeader());
+        // soundObj.emplace("data", castedVal->getData());
+        soundObj.emplace("header", nullptr);
+        soundObj.emplace("data", nullptr);
+
+        obj.emplace(name, soundObj);
+    } else if (type == IMGDataType::UOL) {
+        auto castedVal = static_cast<const UOLIMGData*>(getValue());
+        obj.emplace(name, castedVal->getVal());
     } else {
-        // find generic function for this kind of call
-        // obj.emplace(name, value->getVal());
+        // should error here
+        std::string exception("(Extract) Invalid entry parse method: ");
+        exception += std::to_string(static_cast<uint8_t>(type));
+        throw std::runtime_error(exception);
     }
 }
 
 void IMGFile::extract() {
     json obj = json::object();
     root->extract(obj);
-    // none type = (folderlike)
-    // other type = value
 
     // print at name location
     std::cout << obj.dump(2) << '\n';

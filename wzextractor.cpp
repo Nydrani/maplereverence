@@ -63,11 +63,11 @@ int main(int argc, char* argv[]) {
     for (const auto& file : files) {
         std::cout << "===== " << file.second->getName() << " =====\n";
         file.second->print();
-        std::cout << "Extracting: " << file.second->getName();
+        std::cout << "\nExtracting: " << file.second->getName();
         std::cout << std::endl;;
         file.second->extract();
-        std::cout << '\n';
     }
 
     return EXIT_SUCCESS;
 }
+

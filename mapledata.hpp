@@ -4,6 +4,20 @@
 #include <vector>
 #include <utility>
 
+#include <boost/variant.hpp>
+
+
+// @TODO unused
+struct SoundIMGContainer {
+        std::vector<uint8_t> header;
+        std::vector<uint8_t> data;
+};
+
+// @TODO unused (meant to convert classes to single variant
+using IMGTypeContainer = boost::variant<int16_t, int32_t, float, double, std::string,
+    std::pair<int32_t, int32_t>, std::vector<uint8_t>,
+    struct SoundIMGContainer>;
+
 
 enum class IMGDataType : uint8_t {
     NONE,
@@ -12,7 +26,6 @@ enum class IMGDataType : uint8_t {
     FLOAT,
     DOUBLE,
     STRING,
-    EXTENDED,
     PROPERTY,
     CANVAS,
     VECTOR,
@@ -20,7 +33,6 @@ enum class IMGDataType : uint8_t {
     SOUND,
     UOL
 };
-
 
 class IMGData {
     public:
@@ -139,14 +151,18 @@ class CanvasIMGData : public IMGData {
 class SoundIMGData : public IMGData {
     public:
         SoundIMGData(const std::vector<uint8_t>& header,
-                const std::vector<uint8_t>& data)
-            : header(header), data(data) {}
+                const std::vector<uint8_t>& data) {
+            container.header = header;
+            container.data = data;
+        }
         ~SoundIMGData() {}
 
         const std::vector<uint8_t>& getHeader() const;
         const std::vector<uint8_t>& getData() const;
 
     private:
+        // @TODO unused for now
+        struct SoundIMGContainer container;
         std::vector<uint8_t> header;
         std::vector<uint8_t> data;
 };

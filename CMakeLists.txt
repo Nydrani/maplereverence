@@ -42,7 +42,6 @@ target_link_libraries (IMGExtractor WZTool)
 target_link_libraries (IMGExtractor MapleAccessor)
 target_link_libraries (IMGExtractor ${Boost_FILESYSTEM_LIBRARY})
 target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
-target_link_libraries (IMGExtractor ${Boost_SYSTEM_LIBRARY})
 #target_link_libraries (IMGExtractor nlohmann_json::nlohmann_json)
 
 install (TARGETS WZExtractor IMGExtractor DESTINATION bin)

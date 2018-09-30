@@ -19,23 +19,62 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE_PARAM;
     }
 
-    const char* imgFileName = argv[1];
+    bool isFolder;
+    const char* imgPath = argv[1];
+
+    std::map<std::string, std::unique_ptr<IMGFile>> files; 
 
     // exit if nonexistent file
-    if (!boost::filesystem::is_regular_file(imgFileName)) {
-        std::cout << "Usage: ./IMGExtractor <IMGFilePath>\n";
-        std::cout << "Error: File '" << imgFileName << "' does not exist\n";
-        return EXIT_FAILURE_NONEXISTENT_FILE;
+    if (boost::filesystem::is_regular_file(imgPath)) {
+        isFolder = false;
+    } else if (boost::filesystem::is_directory(imgPath)) {
+        isFolder = true;
+    } else {
+        std::cout << "Usage: ./WZExtractor <IMGFolderPath|IMGFilePath>\n";
+        std::cout << "Error: Folder/File '" << imgPath << "' does not exist\n";
+        return EXIT_FAILURE_NONEXISTENT_FILE_OR_FOLDER;
     }
 
-    // store cwd and traverse to wz directory
+    // store cwd and traverse to img directory
     auto curPath = boost::filesystem::current_path();
-    auto filePath = boost::filesystem::path(imgFileName);
-    chdir(filePath.parent_path().c_str());
+    auto absPath = boost::filesystem::absolute(imgPath).remove_trailing_separator();
+    // sanity check filePath
+    if (absPath.string().find(maplereverence::wzExtension) == std::string::npos) {
+        return EXIT_FAILURE_NON_EXTRACTED_WZ_FOLDER;
+    }
 
-    // load file
-    std::cout << filePath.filename() << '\n';
-    IMGFile imgFile(filePath.filename().string());
+    // move to img path
+    chdir(absPath.parent_path().c_str());
+
+    // now move to root wz path
+    while (boost::filesystem::current_path().string().find(maplereverence::wzExtension) != std::string::npos) {
+        chdir(boost::filesystem::current_path().parent_path().c_str());
+    }
+
+    // find relative path from target folder to root folder
+    auto relativePath = absPath.lexically_relative(boost::filesystem::current_path());
+
+    // load all img in the folder
+    if (isFolder) {
+        // populate map with img files from folder
+        boost::filesystem::directory_iterator imgIt(relativePath);
+        boost::filesystem::directory_iterator endIt;
+        for (; imgIt != endIt; ++imgIt) {
+            const boost::filesystem::path filePath(imgIt->path());
+
+            // skip non img files
+            if (filePath.extension() != maplereverence::imgExtension) {
+                continue;
+            }
+
+            files.emplace(filePath.string(), std::unique_ptr<IMGFile>(
+                        new IMGFile(filePath.string())));
+        }
+    // otherwise just load the single img file
+    } else {
+        files.emplace(relativePath.string(), std::unique_ptr<IMGFile>(
+                    new IMGFile(relativePath.string())));
+    }
 
     // restore back to original path
     chdir(curPath.c_str());
@@ -45,12 +84,14 @@ int main(int argc, char* argv[]) {
     chdir(maplereverence::imgExtractPath.c_str());
 
     // print output
-    std::cout << "===== " << imgFile.getName() << " =====\n";
-    imgFile.print();
-    std::cout << "Extracting: " << imgFile.getName();
-    std::cout << std::endl;;
-    imgFile.extract();
-    std::cout << std::endl;;
+    for (const auto& file : files) {
+        std::cout << "===== " << file.second->getName() << " =====\n";
+        file.second->print();
+        std::cout << "\nExtracting: " << file.second->getName();
+        std::cout << std::endl;;
+        file.second->extract();
+    }
 
     return EXIT_SUCCESS;
 }
+
