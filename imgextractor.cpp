@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
 
     bool isFolder;
     const char* imgPath = argv[1];
-
     std::map<std::string, std::unique_ptr<IMGFile>> files; 
 
     // exit if nonexistent file
@@ -36,19 +35,24 @@ int main(int argc, char* argv[]) {
     }
 
     // store cwd and traverse to img directory
-    auto curPath = boost::filesystem::current_path();
     auto absPath = boost::filesystem::absolute(imgPath).remove_trailing_separator();
+    auto curPath = boost::filesystem::current_path();
     // sanity check filePath
     if (absPath.string().find(maplereverence::wzExtension) == std::string::npos) {
         return EXIT_FAILURE_NON_EXTRACTED_WZ_FOLDER;
     }
 
-    // move to img path
-    chdir(absPath.parent_path().c_str());
+    // move to img path (depending on if file or folder)
+    if (isFolder) {
+        chdir(absPath.c_str());
+    } else {
+        chdir(absPath.parent_path().c_str());
+    }
 
     // now move to root wz path
     while (boost::filesystem::current_path().string().find(maplereverence::wzExtension) != std::string::npos) {
         chdir(boost::filesystem::current_path().parent_path().c_str());
+        std::cout << boost::filesystem::current_path() << '\n';
     }
 
     // find relative path from target folder to root folder
