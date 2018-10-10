@@ -138,14 +138,24 @@ class ConvexIMGData : public IMGData {
 
 class CanvasIMGData : public IMGData {
     public:
-        CanvasIMGData(const std::vector<uint8_t>& val) : val(val) {}
+        CanvasIMGData(const std::vector<uint8_t>& val, int32_t width, int32_t height, int32_t unkA, int8_t unkB)
+            : val(val), width(width), height(height), unkA(unkA), unkB(unkB) {}
         //StringIMGData(const std::string& val) : IMGData(IMGDataType::STRING), val(val) {}
         ~CanvasIMGData() {}
 
         const std::vector<uint8_t>& getVal() const;
+        int32_t getWidth() const;
+        int32_t getHeight() const;
+        int32_t getUnkA() const;
+        int8_t getUnkB() const;
+
 
     private:
         std::vector<uint8_t> val;
+        int32_t width;
+        int32_t height;
+        int32_t unkA;
+        int8_t unkB;
 };
 
 class SoundIMGData : public IMGData {

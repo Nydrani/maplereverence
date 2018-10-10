@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include <boost/filesystem.hpp>
 
 #include "mapleaccessor.hpp"
 #include "mapledata.hpp"
@@ -26,7 +27,7 @@ class IMGEntry {
         void addEntry(std::unique_ptr<IMGEntry>);
         const std::vector<std::unique_ptr<IMGEntry>>& getEntries() const;
 
-        void extract(nlohmann::json&);
+        void extract(nlohmann::json&, std::string);
         void print() const;
 
     private:
@@ -49,7 +50,8 @@ class IMGFile {
             accessor.seek(curPos);
 
             root = std::unique_ptr<IMGEntry>(new IMGEntry());
-            root->setName(name);
+            boost::filesystem::path filePath(name);
+            root->setName(filePath.filename().c_str());
 
             buildIMGStructure(root.get());
         }

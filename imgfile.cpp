@@ -3,6 +3,9 @@
 #include <memory>
 #include <utility>
 
+#include <zlib.h>
+#include <unistd.h>
+
 #include "wztool.hpp"
 #include "imgfile.hpp"
 #include "constants.hpp"
@@ -64,7 +67,14 @@ const std::string& IMGFile::getName() const {
     return name;
 }
 
-void IMGEntry::extract(json& obj) {
+void IMGEntry::extract(json& obj, std::string depth) {
+    // update path
+    if (depth.find(".") != depth.npos) {
+        depth.append(".").append(name);
+    } else {
+        depth.append(name);
+    }
+
     if (type == IMGDataType::NONE) {
         // do something? or nothing?
     } else if (type == IMGDataType::SHORT) {
@@ -83,20 +93,30 @@ void IMGEntry::extract(json& obj) {
         auto castedVal = static_cast<const StringIMGData*>(getValue());
         obj.emplace(name, castedVal->getVal());
     } else if (type == IMGDataType::PROPERTY) {
-        obj.emplace(name, json::object());
+        json propertyObj = json::object();
         for (auto& entry : entries) {
-            entry->extract(obj.at(name));
+            entry->extract(propertyObj, depth);
         }
+        obj.emplace(name, propertyObj);
     } else if (type == IMGDataType::CANVAS) {
         json canvasObj = json::object();
 
         // @TODO remove raw data for now
-        // auto castedVal = static_cast<const CanvasIMGData*>(getValue());
+        auto castedVal = static_cast<const CanvasIMGData*>(getValue());
         // canvasObj.emplace("CANVAS_DATA", castedVal->getVal());
         canvasObj.emplace("CANVAS_DATA", nullptr);
 
+        // extract to ofstream
+        std::cout << "width: " << castedVal->getWidth() << " height: " << castedVal->getHeight() << '\n';
+        std::cout << "unka : " << castedVal->getUnkA() << " unkb: " << castedVal->getUnkB() << '\n';
+        std::cout << depth << ".rgb4444\n";
+        std::ofstream outStream(depth + ".rgb4444", std::ios::out | std::ios::binary);
+        outStream.write(reinterpret_cast<const char*>(&castedVal->getVal()[0]), castedVal->getVal().size());
+
+        // @TODO convert raw to png images
+
         for (auto& entry : entries) {
-            entry->extract(canvasObj);
+            entry->extract(canvasObj, depth);
         }
 
         obj.emplace(name, canvasObj);
@@ -104,19 +124,25 @@ void IMGEntry::extract(json& obj) {
         auto castedVal = static_cast<const VectorIMGData*>(getValue());
         obj.emplace(name, castedVal->getVal());
     } else if (type == IMGDataType::CONVEX) {
-        obj.emplace(name, json::object());
+        json convexObj = json::object();
         for (auto& entry : entries) {
-            entry->extract(obj.at(name));
+            entry->extract(convexObj, depth);
         }
+        obj.emplace(name, convexObj);
     } else if (type == IMGDataType::SOUND) {
         json soundObj = json::object();
 
         // @TODO remove raw data for now
-        // auto castedVal = static_cast<const SoundIMGData*>(getValue());
+        auto castedVal = static_cast<const SoundIMGData*>(getValue());
         // soundObj.emplace("header", castedVal->getHeader());
         // soundObj.emplace("data", castedVal->getData());
         soundObj.emplace("header", nullptr);
         soundObj.emplace("data", nullptr);
+
+        // extract to ofstream
+        std::cout << "header: " << castedVal->getHeader() << '\n';
+        std::ofstream outStream(name + ".mp3", std::ios::out | std::ios::binary);
+        outStream.write(reinterpret_cast<const char*>(&castedVal->getData()[0]), castedVal->getData().size());
 
         obj.emplace(name, soundObj);
     } else if (type == IMGDataType::UOL) {
@@ -132,10 +158,30 @@ void IMGEntry::extract(json& obj) {
 
 void IMGFile::extract() {
     json obj = json::object();
-    root->extract(obj);
+
+    // store original path
+    auto curPath = boost::filesystem::current_path();
+
+    // create directory to hold file
+    boost::filesystem::path filePath(name);
+    boost::filesystem::create_directories(filePath);
+
+    // move to new path
+    chdir(filePath.c_str());
+
+    // extract into memory
+    std::string rootStr;
+    root->extract(obj, rootStr);
 
     // print at name location
     std::cout << obj.dump(2) << '\n';
+
+    // extract to ofstream
+    std::ofstream outStream(filePath.replace_extension(".json").filename().c_str(), std::ios::out);
+    outStream << obj;
+
+    // restore old path
+    chdir(curPath.c_str());
 }
 
 void IMGFile::print() const {
@@ -217,16 +263,18 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
 
         // @TODO seems to be some stuff
         // x, y?
-        accessor.readCompressedInt();
-        accessor.readCompressedInt();
-        accessor.readCompressedInt();
-        accessor.readByte();
+        int32_t width = accessor.readCompressedInt();
+        int32_t height = accessor.readCompressedInt();
+        int32_t compc = accessor.readCompressedInt();
+        int8_t compd = accessor.readByte();
+        std::cout << "canvas: a " << width << " b " << height << " c " << compc << " d " << static_cast<int32_t>(compd) << "\n";
 
         // @TODO padding?
         accessor.readInt();
 
         // data length
         uint32_t dataLength = accessor.readUnsignedInt();
+        std::cout << "canvas data length " << dataLength << '\n';
 
         // padding
         accessor.readByte();
@@ -234,7 +282,7 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
         // read data
         std::vector<uint8_t> data = accessor.readData(dataLength);
 
-        entry->setValue(std::unique_ptr<CanvasIMGData>(new CanvasIMGData(data)));
+        entry->setValue(std::unique_ptr<CanvasIMGData>(new CanvasIMGData(data, width, height, compc, compd)));
     } else if (entryType == "Shape2D#Vector2D") {
         entry->setType(IMGDataType::VECTOR);
 

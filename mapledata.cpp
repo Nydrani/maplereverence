@@ -37,6 +37,22 @@ const std::vector<uint8_t>& CanvasIMGData::getVal() const {
     return val;
 }
 
+int32_t CanvasIMGData::getWidth() const {
+    return width;
+}
+
+int32_t CanvasIMGData::getHeight() const {
+    return height;
+}
+
+int32_t CanvasIMGData::getUnkA() const {
+    return unkA;
+}
+
+int8_t CanvasIMGData::getUnkB() const {
+    return unkB;
+}
+
 const std::vector<uint8_t>& SoundIMGData::getHeader() const {
     return header;
 }
