@@ -5,11 +5,11 @@ import struct
 import sys
 
 
-if len(sys.argv) != 2:
-    print("needs 1 arg")
+if len(sys.argv) != 4:
+    print("needs 3 args | <file> <height> <width>")
     sys.exit(1)
 
-img = Image.new('RGBA', (29, 33))
+img = Image.new('RGBA', (int(sys.argv[2]), int(sys.argv[3])))
 
 with open(sys.argv[1], "rb") as f:
     pixels = img.load()

@@ -108,10 +108,38 @@ void IMGEntry::extract(json& obj, std::string depth) {
 
         // extract to ofstream
         std::cout << "width: " << castedVal->getWidth() << " height: " << castedVal->getHeight() << '\n';
-        std::cout << "unka : " << castedVal->getUnkA() << " unkb: " << castedVal->getUnkB() << '\n';
+        std::cout << "unka : " << castedVal->getUnkA() << " unkb: " << static_cast<int32_t>(castedVal->getUnkB()) << '\n';
         std::cout << depth << ".rgb4444\n";
         std::ofstream outStream(depth + ".rgb4444", std::ios::out | std::ios::binary);
         outStream.write(reinterpret_cast<const char*>(&castedVal->getVal()[0]), castedVal->getVal().size());
+
+        // @TODO extract zlib stream
+        z_stream stream;
+        stream.zalloc = Z_NULL;
+        stream.zfree = Z_NULL;
+        stream.opaque = Z_NULL;
+        auto ret = inflateInit(&stream);
+        if (ret != Z_OK) {
+            std::cout << "Not ok" << std::endl;
+        } else {
+            std::cout << "Ok" << std::endl;
+
+            stream.avail_in = castedVal->getVal().size();
+            stream.next_in = const_cast<Bytef*>(&castedVal->getVal()[0]);
+
+            int16_t extractedSize = castedVal->getWidth() * castedVal->getHeight() * 2;
+            std::vector<uint8_t> s(extractedSize);
+
+            stream.avail_out = extractedSize;
+            stream.next_out = &s[0];
+
+            inflate(&stream, Z_SYNC_FLUSH);
+
+            std::ofstream rawStream(depth + ".rgb4444.raw", std::ios::out | std::ios::binary);
+            rawStream.write(reinterpret_cast<const char*>(&s[0]), s.size());
+
+            inflateEnd(&stream);
+        }
 
         // @TODO convert raw to png images
 
@@ -213,9 +241,6 @@ void IMGFile::parseIMGEntryExtended(IMGEntry* entry) {
     std::string entryType = maplereverence::detectString(
             maplereverence::imgEntryStringByte,
             maplereverence::imgEntryLinkByte, accessor);
-
-    // update entry name 
-    // entry->setName(entryType);
 
     if (entryType == "Property") {
         entry->setType(IMGDataType::PROPERTY);
