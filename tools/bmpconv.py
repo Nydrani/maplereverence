@@ -30,4 +30,6 @@ with open(sys.argv[1], "rb") as f:
             b |= (b << 4)
 
             pixels[j, i] = (r, g, b, a)
+
+img.save("out.png")
 img.show()

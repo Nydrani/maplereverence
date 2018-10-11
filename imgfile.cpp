@@ -4,6 +4,7 @@
 #include <utility>
 
 #include <zlib.h>
+#include <Magick++.h>
 #include <unistd.h>
 
 #include "wztool.hpp"
@@ -113,6 +114,10 @@ void IMGEntry::extract(json& obj, std::string depth) {
         std::ofstream outStream(depth + ".rgb4444", std::ios::out | std::ios::binary);
         outStream.write(reinterpret_cast<const char*>(&castedVal->getVal()[0]), castedVal->getVal().size());
 
+
+        int16_t extractedSize = castedVal->getWidth() * castedVal->getHeight() * 2;
+        std::vector<uint8_t> rgba4444(extractedSize);
+
         // @TODO extract zlib stream
         z_stream stream;
         stream.zalloc = Z_NULL;
@@ -126,22 +131,30 @@ void IMGEntry::extract(json& obj, std::string depth) {
 
             stream.avail_in = castedVal->getVal().size();
             stream.next_in = const_cast<Bytef*>(&castedVal->getVal()[0]);
-
-            int16_t extractedSize = castedVal->getWidth() * castedVal->getHeight() * 2;
-            std::vector<uint8_t> s(extractedSize);
-
             stream.avail_out = extractedSize;
-            stream.next_out = &s[0];
+            stream.next_out = &rgba4444[0];
 
             inflate(&stream, Z_SYNC_FLUSH);
 
             std::ofstream rawStream(depth + ".rgb4444.raw", std::ios::out | std::ios::binary);
-            rawStream.write(reinterpret_cast<const char*>(&s[0]), s.size());
+            rawStream.write(reinterpret_cast<const char*>(&rgba4444[0]), rgba4444.size());
 
             inflateEnd(&stream);
         }
 
         // @TODO convert raw to png images
+        std::vector<uint8_t> rgba8888(extractedSize * 2);
+        for (auto it = rgba4444.begin(); it != rgba4444.end(); ++it) {
+            uint8_t a = (*it & 0x0f) | *it << 4;
+            uint8_t b = (*it & 0xf0) | *it >> 4;
+
+            rgba8888.push_back(a);
+            rgba8888.push_back(b);
+        }
+
+        Magick::Image image;
+        image.read(castedVal->getWidth(), castedVal->getHeight(), "RGBA", Magick::CharPixel, &rgba8888[0]);
+        image.write(depth + ".rgb4444.raw.png");
 
         for (auto& entry : entries) {
             entry->extract(canvasObj, depth);
